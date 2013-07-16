@@ -10,7 +10,7 @@ bunsan_use_boost(system filesystem thread)
 bunsan_use_protobuf()
 
 bunsan_add_shared_library(${PROJECT_NAME}
-    src/lib/stub.cpp
+    src/lib/BaseIo.cpp
 )
 
 bunsan_install_headers()
