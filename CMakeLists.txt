@@ -13,6 +13,7 @@ bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/BaseIo.cpp
     src/lib/MessageType.cpp
     src/lib/MessageTypePool.cpp
+    src/lib/LogReader.cpp
 )
 
 bunsan_install_headers()
