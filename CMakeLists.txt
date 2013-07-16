@@ -11,6 +11,7 @@ bunsan_use_protobuf()
 
 bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/BaseIo.cpp
+    src/lib/MessageType.cpp
 )
 
 bunsan_install_headers()
