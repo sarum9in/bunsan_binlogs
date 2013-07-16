@@ -1,0 +1,16 @@
+package bunsan.binlogs.v1;
+
+import "google/protobuf/descriptor.proto";
+
+message HeaderData {
+    message Type {
+        /*!
+         * \note: type_id is index in HeaderData.types,
+         * but 1 tag is still reserved for id.
+         */
+        required string name = 2;
+    }
+
+    required google.protobuf.FileDescriptorSet proto = 1;
+    repeated Type types = 2;
+}

@@ -9,7 +9,13 @@ include(BunsanCommon)
 bunsan_use_boost(system filesystem thread)
 bunsan_use_protobuf()
 
+bunsan_protobuf_generate_cpp(SOURCES proto_srcs HEADERS proto_hdrs INSTALL include PROTOS
+    bunsan/binlogs/v1/HeaderData.proto
+)
+
 bunsan_add_shared_library(${PROJECT_NAME}
+    ${proto_srcs}
+
     src/lib/BaseIo.cpp
     src/lib/MessageType.cpp
     src/lib/MessageTypePool.cpp
