@@ -21,6 +21,8 @@ bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/MessageTypePool.cpp
     src/lib/LogReader.cpp
     src/lib/LogWriter.cpp
+
+    src/lib/v1/MessageType.cpp
 )
 
 bunsan_install_headers()
