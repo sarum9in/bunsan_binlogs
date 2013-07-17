@@ -11,7 +11,7 @@
 namespace bunsan {
 namespace binlogs {
 
-class LogWriter: public BaseWriter, public MessageTypePool {
+class LogWriter: public BaseWriter {
 public:
     /// \warning Should always be called before object usage.
     virtual bool writeHeader(const Header &header, std::string *error=nullptr)=0;
@@ -21,6 +21,8 @@ public:
     virtual bool write(const std::string &typeName,
                        const google::protobuf::Message &message,
                        std::string *error=nullptr)=0;
+
+    virtual const MessageTypePool &messageTypePool() const=0;
 };
 
 }

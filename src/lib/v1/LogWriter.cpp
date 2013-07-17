@@ -113,14 +113,9 @@ LogWriter::State LogWriter::state() const
     return state_;
 }
 
-const MessageType *LogWriter::type(const std::string &typeName) const
+const binlogs::MessageTypePool &LogWriter::messageTypePool() const
 {
-    return pool_.type(typeName);
-}
-
-LogWriter::range LogWriter::types() const
-{
-    return pool_.types();
+    return pool_;
 }
 
 }

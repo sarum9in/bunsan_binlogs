@@ -28,8 +28,7 @@ public:
 
     State state() const override;
 
-    const MessageType *type(const std::string &typeName) const override;
-    range types() const override;
+    const binlogs::MessageTypePool &messageTypePool() const override;
 
 private:
     bool write_(const std::string *const typeName,
