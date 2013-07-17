@@ -17,7 +17,12 @@ MessageTypePool::MessageTypePool():
 bool MessageTypePool::Init(const Header &header, std::string *error)
 {
     for (const google::protobuf::FileDescriptorProto &proto: header.proto.file()) {
-        BOOST_VERIFY(db_.Add(proto));
+        if (!db_.Add(proto)) {
+            if (error) {
+                *error = "File already in db.";
+            }
+            return false;
+        }
     }
 
     messageTypes_.resize(header.types.size());
