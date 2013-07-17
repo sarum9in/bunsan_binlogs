@@ -57,6 +57,7 @@ const MessageType *LogReader::nextMessageType(std::string *error)
         if (!nextMessageType_) {
             google::protobuf::uint32 typeId;
             if (!read_(typeId, "type", error)) {
+                state_ = State::kEof; // TODO check underlying stream
                 return nullptr;
             }
             nextMessageType_ = pool_.type(typeId);
