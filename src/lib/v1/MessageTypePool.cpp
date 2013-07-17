@@ -62,8 +62,11 @@ MessageTypePool::Id MessageTypePool::typeId(const std::string &typeName) const
 
 const MessageType *MessageTypePool::type(const Id id) const
 {
-    BOOST_ASSERT(id < messageTypes_.size());
-    return messageTypes_[id].get();
+    if (id < messageTypes_.size()) {
+        return messageTypes_[id].get();
+    } else {
+        return nullptr;
+    }
 }
 
 const MessageType *MessageTypePool::type(const std::string &typeName) const

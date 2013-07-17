@@ -29,10 +29,7 @@ public:
     /// \return npos if not found
     Id typeId(const std::string &typeName) const;
 
-    /*!
-     * \pre id is valid
-     * \post return value is not nullptr
-     */
+    /// \return nullptr if id is not valid
     const MessageType *type(const Id id) const;
 
     /// \return nullptr if not found
