@@ -12,7 +12,7 @@
 namespace bunsan {
 namespace binlogs {
 
-class LogReader: public BaseReader, public MessageTypePool {
+class LogReader: public BaseReader {
 public:
     /// \warning Should always be called before object usage.
     virtual bool readHeader(std::string *error=nullptr)=0;
@@ -25,6 +25,8 @@ public:
 
     /// What message will be read next (if available)?
     virtual const MessageType *nextMessageType(std::string *error=nullptr)=0;
+
+    virtual const MessageTypePool &messageTypePool() const=0;
 };
 
 }
