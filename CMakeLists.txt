@@ -28,8 +28,13 @@ bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/v1/LogWriter.cpp
     src/lib/v1/LogReader.cpp
 )
+bunsan_use(${PROJECT_NAME})
+
+bunsan_add_executable(${PROJECT_NAME}_read
+    src/bin/read.cpp
+)
 
 bunsan_install_headers()
-bunsan_install_targets(${PROJECT_NAME})
+bunsan_install_targets(${PROJECT_NAME} ${PROJECT_NAME}_read)
 
 bunsan_include_tests()
