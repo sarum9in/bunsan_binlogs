@@ -58,7 +58,7 @@ bool LogWriter::write_(const std::string *const typeName,
         BOOST_ASSERT(!output_->HadError());
         if (typeName) {
             const google::protobuf::uint32 messageType = pool_.typeId(*typeName);
-            if (messageType == v1::MessageTypePool::npos) {
+            if (messageType == MessageTypePool::npos) {
                 state_ = State::kFail;
                 if (error) {
                     *error = str(boost::format("Type \"%1%\" is not registered."));

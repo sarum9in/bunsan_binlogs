@@ -39,7 +39,7 @@ private:
 
     std::unique_ptr<google::protobuf::io::CodedOutputStream> output_;
     std::unique_ptr<HeaderData> headerData_;
-    v1::MessageTypePool pool_;
+    MessageTypePool pool_;
     State state_ = State::kOk;
 };
 
