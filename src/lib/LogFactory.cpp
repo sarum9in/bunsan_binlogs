@@ -25,13 +25,15 @@ std::unique_ptr<LogReader> openReadOnly(
     std::string *error)
 {
     BOOST_ASSERT(input);
-    google::protobuf::io::CodedInputStream inp(input);
     boost::uuids::uuid format;
-    if (!inp.ReadRaw(&format, static_cast<int>(format.size()))) {
-        if (error) {
-            *error = "Unable to read format magic.";
+    {
+        google::protobuf::io::CodedInputStream inp(input);
+        if (!inp.ReadRaw(&format, static_cast<int>(format.size()))) {
+            if (error) {
+                *error = "Unable to read format magic.";
+            }
+            return nullptr;
         }
-        return nullptr;
     }
 
     std::unique_ptr<LogReader> logReader;
@@ -54,13 +56,15 @@ std::unique_ptr<LogWriter> openWriteOnly(
     std::string *error)
 {
     BOOST_ASSERT(output);
-    google::protobuf::io::CodedOutputStream outp(output);
-    outp.WriteRaw(&MAGIC_FORMAT_V1, static_cast<int>(MAGIC_FORMAT_V1.size()));
-    if (outp.HadError()) {
-        if (error) {
-            *error = "Unable to write format magic.";
+    {
+        google::protobuf::io::CodedOutputStream outp(output);
+        outp.WriteRaw(&MAGIC_FORMAT_V1, static_cast<int>(MAGIC_FORMAT_V1.size()));
+        if (outp.HadError()) {
+            if (error) {
+                *error = "Unable to write format magic.";
+            }
+            return nullptr;
         }
-        return nullptr;
     }
     std::unique_ptr<LogWriter> logWriter = detail::make_unique<v1::LogWriter>(output);
     if (!logWriter->writeHeader(header, error)) {

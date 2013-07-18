@@ -89,16 +89,19 @@ bool LogReader::read_(google::protobuf::Message &message, std::string *error)
             error = &error_;
         }
 
-        google::protobuf::io::CodedInputStream input(input_);
-
         google::protobuf::uint32 messageSize;
         if (!read_(messageSize, "size", error)) {
             return false;
         }
-        const google::protobuf::io::CodedInputStream::Limit limit =
-            input.PushLimit(static_cast<int>(messageSize));
-        const bool messageReadResult = message.ParseFromCodedStream(&input);
-        input.PopLimit(limit);
+
+        bool messageReadResult;
+        {
+            google::protobuf::io::CodedInputStream input(input_);
+            const google::protobuf::io::CodedInputStream::Limit limit =
+                input.PushLimit(static_cast<int>(messageSize));
+            messageReadResult = message.ParseFromCodedStream(&input);
+            input.PopLimit(limit);
+        }
         if (!messageReadResult) {
             // note: we ignore return value
             // because Skip() may try to read past limit and it is IO error
