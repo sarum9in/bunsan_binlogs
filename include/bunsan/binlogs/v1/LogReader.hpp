@@ -5,7 +5,6 @@
 
 #include "bunsan/binlogs/LogReader.hpp"
 
-#include <google/protobuf/descriptor_database.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/message.h>
 
