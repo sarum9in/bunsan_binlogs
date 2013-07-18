@@ -5,6 +5,8 @@
 
 #include "bunsan/binlogs/detail/make_unique.hpp"
 
+#include <google/protobuf/io/coded_stream.h>
+
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -19,12 +21,13 @@ const boost::uuids::uuid MAGIC_FORMAT_V1 = boost::uuids::string_generator()("f6a
 }
 
 std::unique_ptr<LogReader> openReadOnly(
-    std::unique_ptr<google::protobuf::io::CodedInputStream> &&input,
+    google::protobuf::io::ZeroCopyInputStream *const input,
     std::string *error)
 {
     BOOST_ASSERT(input);
+    google::protobuf::io::CodedInputStream inp(input);
     boost::uuids::uuid format;
-    if (!input->ReadRaw(&format, static_cast<int>(format.size()))) {
+    if (!inp.ReadRaw(&format, static_cast<int>(format.size()))) {
         if (error) {
             *error = "Unable to read format magic.";
         }
@@ -33,7 +36,7 @@ std::unique_ptr<LogReader> openReadOnly(
 
     std::unique_ptr<LogReader> logReader;
     if (format == MAGIC_FORMAT_V1) {
-        logReader = detail::make_unique<v1::LogReader>(std::move(input));
+        logReader = detail::make_unique<v1::LogReader>(input);
     } else {
         if (error) {
             *error = str(boost::format("Unknown format {%1%}.") % format);
@@ -46,20 +49,20 @@ std::unique_ptr<LogReader> openReadOnly(
 }
 
 std::unique_ptr<LogWriter> openWriteOnly(
-    std::unique_ptr<google::protobuf::io::CodedOutputStream> &&output,
+    google::protobuf::io::ZeroCopyOutputStream *const output,
     const Header &header,
     std::string *error)
 {
     BOOST_ASSERT(output);
-    BOOST_ASSERT(!output->HadError());
-    output->WriteRaw(&MAGIC_FORMAT_V1, static_cast<int>(MAGIC_FORMAT_V1.size()));
-    if (output->HadError()) {
+    google::protobuf::io::CodedOutputStream outp(output);
+    outp.WriteRaw(&MAGIC_FORMAT_V1, static_cast<int>(MAGIC_FORMAT_V1.size()));
+    if (outp.HadError()) {
         if (error) {
             *error = "Unable to write format magic.";
         }
         return nullptr;
     }
-    std::unique_ptr<LogWriter> logWriter = detail::make_unique<v1::LogWriter>(std::move(output));
+    std::unique_ptr<LogWriter> logWriter = detail::make_unique<v1::LogWriter>(output);
     if (!logWriter->writeHeader(header, error)) {
         logWriter.reset();
     }

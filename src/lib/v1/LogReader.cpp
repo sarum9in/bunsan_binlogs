@@ -1,6 +1,8 @@
 #include "bunsan/binlogs/v1/LogReader.hpp"
 #include "bunsan/binlogs/detail/make_unique.hpp"
 
+#include <google/protobuf/io/coded_stream.h>
+
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 
@@ -8,8 +10,8 @@ namespace bunsan {
 namespace binlogs {
 namespace v1 {
 
-LogReader::LogReader(std::unique_ptr<google::protobuf::io::CodedInputStream> &&input):
-    input_(std::move(input))
+LogReader::LogReader(google::protobuf::io::ZeroCopyInputStream *const input):
+    input_(input)
 {
     BOOST_ASSERT(input_);
 }
@@ -19,7 +21,7 @@ bool LogReader::readHeader(std::string *error)
     header_ = detail::make_unique<HeaderData>();
     if (!read_(*header_, error)) {
         state_ = State::kBad;
-        input_.reset();
+        input_ = nullptr;
         if (error) {
             *error = "Unable to parse header: " + *error;
         }
@@ -63,7 +65,7 @@ const MessageType *LogReader::nextMessageType(std::string *error)
             nextMessageType_ = pool_.type(typeId);
             if (!*nextMessageType_) {
                 state_ = State::kBad;
-                input_.reset();
+                input_ = nullptr;
                 if (error) {
                     *error = str(boost::format("Unknown type id = %1%.") % typeId);
                 }
@@ -87,14 +89,16 @@ bool LogReader::read_(google::protobuf::Message &message, std::string *error)
             error = &error_;
         }
 
+        google::protobuf::io::CodedInputStream input(input_);
+
         google::protobuf::uint32 messageSize;
         if (!read_(messageSize, "size", error)) {
             return false;
         }
         const google::protobuf::io::CodedInputStream::Limit limit =
-            input_->PushLimit(static_cast<int>(messageSize));
-        const bool messageReadResult = message.ParseFromCodedStream(input_.get());
-        input_->PopLimit(limit);
+            input.PushLimit(static_cast<int>(messageSize));
+        const bool messageReadResult = message.ParseFromCodedStream(&input);
+        input.PopLimit(limit);
         if (!messageReadResult) {
             // note: we ignore return value
             // because Skip() may try to read past limit and it is IO error
@@ -106,7 +110,7 @@ bool LogReader::read_(google::protobuf::Message &message, std::string *error)
         if (message.ByteSize() != static_cast<int>(messageSize)) {
             BOOST_ASSERT(message.ByteSize() < static_cast<int>(messageSize));
             state_ = State::kBad;
-            input_.reset();
+            input_ = nullptr;
             *error = str(boost::format("Corrupted message: unable to read %1% bytes.") % messageSize);
             return false;
         }
@@ -120,9 +124,10 @@ bool LogReader::read_(google::protobuf::Message &message, std::string *error)
 
 bool LogReader::read_(google::protobuf::uint32 &uint32, const std::string &field, std::string *error)
 {
-    if (!input_->ReadLittleEndian32(&uint32)) {
+    google::protobuf::io::CodedInputStream input(input_);
+    if (!input.ReadLittleEndian32(&uint32)) {
         state_ = State::kBad;
-        input_.reset();
+        input_ = nullptr;
         if (error) {
             *error = str(boost::format("Unable to read message %1%.") % field);
         }
@@ -134,7 +139,7 @@ bool LogReader::read_(google::protobuf::uint32 &uint32, const std::string &field
 bool LogReader::close(std::string */*error*/)
 {
     state_ = State::kEof;
-    input_.reset();
+    input_ = nullptr;
     return true;
 }
 

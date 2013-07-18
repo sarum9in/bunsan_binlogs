@@ -27,11 +27,10 @@ int main(int argc, char *argv[])
         }
         google::protobuf::io::IstreamInputStream input(&fin);
         google::protobuf::io::GzipInputStream gzip(&input);
-        auto in = detail::make_unique<google::protobuf::io::CodedInputStream>(&gzip);
 
         std::string error;
 
-        auto logReader = openReadOnly(std::move(in), &error);
+        auto logReader = openReadOnly(&gzip, &error);
         if (!logReader) {
             std::cerr << file << ": " << error << std::endl;
         }

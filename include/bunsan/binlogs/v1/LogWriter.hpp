@@ -6,6 +6,7 @@
 #include "bunsan/binlogs/LogWriter.hpp"
 
 #include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/message.h>
 
 #include <memory>
@@ -16,7 +17,7 @@ namespace v1 {
 
 class LogWriter: public binlogs::LogWriter {
 public:
-    explicit LogWriter(std::unique_ptr<google::protobuf::io::CodedOutputStream> &&output);
+    explicit LogWriter(google::protobuf::io::ZeroCopyOutputStream *const output);
 
     bool writeHeader(const Header &header, std::string *error=nullptr) override;
 
@@ -35,9 +36,11 @@ private:
                 const google::protobuf::Message &message,
                 std::string *error);
 
-    bool hadError(const std::string &msg, std::string *error);
+    bool hadError(const google::protobuf::io::CodedOutputStream &output,
+                  const std::string &msg,
+                  std::string *error);
 
-    std::unique_ptr<google::protobuf::io::CodedOutputStream> output_;
+    google::protobuf::io::ZeroCopyOutputStream *output_;
     std::unique_ptr<HeaderData> headerData_;
     MessageTypePool pool_;
     State state_ = State::kOk;

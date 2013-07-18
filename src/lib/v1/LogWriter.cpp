@@ -1,6 +1,8 @@
 #include "bunsan/binlogs/v1/LogWriter.hpp"
 #include "bunsan/binlogs/detail/make_unique.hpp"
 
+#include <google/protobuf/io/coded_stream.h>
+
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 
@@ -8,11 +10,10 @@ namespace bunsan {
 namespace binlogs {
 namespace v1 {
 
-LogWriter::LogWriter(std::unique_ptr<google::protobuf::io::CodedOutputStream> &&output):
-    output_(std::move(output))
+LogWriter::LogWriter(google::protobuf::io::ZeroCopyOutputStream *const output):
+    output_(output)
 {
     BOOST_ASSERT(output_);
-    BOOST_ASSERT(!output_->HadError());
 }
 
 bool LogWriter::writeHeader(const Header &header, std::string *error)
@@ -27,7 +28,7 @@ bool LogWriter::writeHeader(const Header &header, std::string *error)
     }
     if (!write_(nullptr, *headerData_, error)) {
         state_ = State::kBad;
-        output_.reset();
+        output_ = nullptr;
         if (error) {
             *error = "Unable to write header: " + *error;
         }
@@ -55,7 +56,7 @@ bool LogWriter::write_(const std::string *const typeName,
                        std::string *error)
 {
     if (output_) {
-        BOOST_ASSERT(!output_->HadError());
+        google::protobuf::io::CodedOutputStream output(output_);
         if (typeName) {
             const google::protobuf::uint32 messageType = pool_.typeId(*typeName);
             if (messageType == MessageTypePool::npos) {
@@ -65,21 +66,21 @@ bool LogWriter::write_(const std::string *const typeName,
                 }
                 return false;
             }
-            output_->WriteLittleEndian32(messageType);
-            if (hadError("Unable to write message type.", error)) {
+            output.WriteLittleEndian32(messageType);
+            if (hadError(output, "Unable to write message type.", error)) {
                 return false;
             }
         }
         const google::protobuf::uint32 messageSize = message.ByteSize();
-        output_->WriteLittleEndian32(messageSize);
-        if (hadError("Unable to write message size.", error)) {
+        output.WriteLittleEndian32(messageSize);
+        if (hadError(output, "Unable to write message size.", error)) {
             return false;
         }
-        message.SerializeWithCachedSizes(output_.get());
-        if (hadError("Unable to write message.", error)) {
+        message.SerializeWithCachedSizes(&output);
+        if (hadError(output, "Unable to write message.", error)) {
             return false;
         }
-        BOOST_ASSERT(!output_->HadError());
+        BOOST_ASSERT(!output.HadError());
         state_ = State::kOk;
         return true;
     } else {
@@ -87,11 +88,13 @@ bool LogWriter::write_(const std::string *const typeName,
     }
 }
 
-bool LogWriter::hadError(const std::string &msg, std::string *error)
+bool LogWriter::hadError(const google::protobuf::io::CodedOutputStream &output,
+                         const std::string &msg,
+                         std::string *error)
 {
-    if (output_->HadError()) {
+    if (output.HadError()) {
         state_ = State::kBad;
-        output_.reset();
+        output_ = nullptr;
         if (error) {
             *error = msg;
         }
@@ -104,7 +107,7 @@ bool LogWriter::hadError(const std::string &msg, std::string *error)
 bool LogWriter::close(std::string */*error*/)
 {
     state_ = State::kEof;
-    output_.reset();
+    output_ = nullptr;
     return true;
 }
 
