@@ -1,6 +1,7 @@
 #include "bunsan/binlogs/detail/make_unique.hpp"
 #include "bunsan/binlogs/LogFactory.hpp"
 
+#include <google/protobuf/descriptor.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/gzip_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
