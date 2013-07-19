@@ -81,9 +81,8 @@ const MessageType *MessageTypePool::type(const std::string &typeName) const
 
 namespace {
 
-struct PtrGet {
-    template <typename Ptr>
-    const MessageType *operator()(const Ptr &ptr) const
+struct PtrGet: std::unary_function<const std::unique_ptr<MessageType> &, const MessageType *> {
+    const MessageType *operator()(const std::unique_ptr<MessageType> &ptr) const
     {
         return ptr.get();
     }
