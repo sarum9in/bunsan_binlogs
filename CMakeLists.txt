@@ -2,7 +2,7 @@ project(bunsan_binlogs)
 
 include(${CMAKE_SOURCE_DIR}/system-config.cmake OPTIONAL)
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.6)
 
 include(BunsanCommon)
 
