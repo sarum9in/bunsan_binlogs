@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bunsan/binlogs/Header.hpp"
 #include "bunsan/binlogs/MessageType.hpp"
 
 #include <boost/range/any_range.hpp>
@@ -19,6 +20,8 @@ public:
     typedef range::iterator iterator;
 
     virtual ~MessageTypePool();
+
+    virtual Header header() const=0;
 
     virtual const MessageType *type(const std::string &typeName) const=0;
 

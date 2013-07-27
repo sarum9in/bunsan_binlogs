@@ -26,6 +26,8 @@ public:
 
     bool Init(const Header &header, std::string *error=nullptr);
 
+    Header header() const override;
+
     /// \return npos if not found
     Id typeId(const std::string &typeName) const;
 
