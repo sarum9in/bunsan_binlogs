@@ -16,7 +16,7 @@ LogReader::LogReader(google::protobuf::io::ZeroCopyInputStream *const input):
     BOOST_ASSERT(input_);
 }
 
-bool LogReader::readHeader(std::string *error)
+bool LogReader::Init(std::string *error)
 {
     header_ = detail::make_unique<HeaderData>();
     if (!read_(*header_, error)) {

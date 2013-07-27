@@ -20,7 +20,7 @@ class LogReader: public binlogs::LogReader {
 public:
     explicit LogReader(google::protobuf::io::ZeroCopyInputStream *const input);
 
-    bool readHeader(std::string *error=nullptr) override;
+    bool Init(std::string *error=nullptr) override;
 
     bool read(google::protobuf::Message &message, std::string *error=nullptr) override;
 

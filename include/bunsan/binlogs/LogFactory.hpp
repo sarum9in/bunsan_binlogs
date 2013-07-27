@@ -11,7 +11,7 @@
 namespace bunsan {
 namespace binlogs {
 
-/// \note calls readHeader()
+/// \note calls Init()
 std::unique_ptr<LogReader> openReadOnly(
     google::protobuf::io::ZeroCopyInputStream *const input,
     std::string *error=nullptr);

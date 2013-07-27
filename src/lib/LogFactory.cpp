@@ -44,7 +44,7 @@ std::unique_ptr<LogReader> openReadOnly(
             *error = str(boost::format("Unknown format {%1%}.") % format);
         }
     }
-    if (logReader && !logReader->readHeader(error)) {
+    if (logReader && !logReader->Init(error)) {
         logReader.reset();
     }
     return logReader;

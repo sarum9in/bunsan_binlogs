@@ -15,7 +15,7 @@ namespace binlogs {
 class LogReader: public BaseReader {
 public:
     /// \warning Should always be called before object usage.
-    virtual bool readHeader(std::string *error=nullptr)=0;
+    virtual bool Init(std::string *error=nullptr)=0;
 
     /// Allocate and read message of appropriate type.
     std::unique_ptr<google::protobuf::Message> read(std::string *error=nullptr);
