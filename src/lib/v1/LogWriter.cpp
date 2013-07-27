@@ -16,7 +16,7 @@ LogWriter::LogWriter(google::protobuf::io::ZeroCopyOutputStream *const output):
     BOOST_ASSERT(output_);
 }
 
-bool LogWriter::writeHeader(const Header &header, std::string *error)
+bool LogWriter::Init(const Header &header, std::string *error)
 {
     if (!pool_.Init(header, error)) {
         return false;

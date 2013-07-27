@@ -16,7 +16,7 @@ std::unique_ptr<LogReader> openReadOnly(
     google::protobuf::io::ZeroCopyInputStream *const input,
     std::string *error=nullptr);
 
-/// \note calls writeHeader()
+/// \note calls Init()
 std::unique_ptr<LogWriter> openWriteOnly(
     google::protobuf::io::ZeroCopyOutputStream *const output,
     const Header &header,

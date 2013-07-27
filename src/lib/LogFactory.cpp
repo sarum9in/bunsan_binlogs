@@ -67,7 +67,7 @@ std::unique_ptr<LogWriter> openWriteOnly(
         }
     }
     std::unique_ptr<LogWriter> logWriter = detail::make_unique<v1::LogWriter>(output);
-    if (!logWriter->writeHeader(header, error)) {
+    if (!logWriter->Init(header, error)) {
         logWriter.reset();
     }
     return logWriter;

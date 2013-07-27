@@ -19,7 +19,7 @@ class LogWriter: public binlogs::LogWriter {
 public:
     explicit LogWriter(google::protobuf::io::ZeroCopyOutputStream *const output);
 
-    bool writeHeader(const Header &header, std::string *error=nullptr) override;
+    bool Init(const Header &header, std::string *error=nullptr) override;
 
     bool write(const std::string &typeName,
                const google::protobuf::Message &message,
