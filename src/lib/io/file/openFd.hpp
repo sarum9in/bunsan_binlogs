@@ -32,6 +32,7 @@ std::unique_ptr<Stream> openFd(const boost::filesystem::path &path, const int fl
         return false;
     }
     stream = detail::make_unique<Stream>(fd);
+    stream->SetCloseOnDelete(true);
     fd = 0; // disable scope exit
 
     return std::move(stream);
