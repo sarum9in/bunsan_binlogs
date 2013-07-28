@@ -29,6 +29,8 @@ bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/v1/MessageTypePool.cpp
     src/lib/v1/LogWriter.cpp
     src/lib/v1/LogReader.cpp
+
+    src/lib/file/BaseBuffer.cpp
 )
 bunsan_use(${PROJECT_NAME})
 
