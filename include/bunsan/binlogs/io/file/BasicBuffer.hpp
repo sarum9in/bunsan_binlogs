@@ -34,6 +34,7 @@ public:
     bool close() override
     {
         if (stream_) {
+            stream_->SetCloseOnDelete(false);
             if (!stream_->Close()) {
                 errno_ = stream_->GetErrno();
             }
