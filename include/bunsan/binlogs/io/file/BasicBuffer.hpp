@@ -49,9 +49,6 @@ public:
 
     bool error(std::string *error=nullptr) const
     {
-        if (closed()) {
-            return false;
-        }
         if (getErrno()) {
             if (error) {
                 *error = std::system_category().message(getErrno());
