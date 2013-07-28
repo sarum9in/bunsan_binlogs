@@ -5,6 +5,7 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/format.hpp>
 
 #include <system_error>
 
@@ -22,6 +23,7 @@ public:
         if (!closed()) {
             return false;
         }
+        path_ = path;
         stream_ = openFd(path, errno_);
         return !getErrno();
     }
@@ -52,7 +54,9 @@ public:
     {
         if (getErrno()) {
             if (error) {
-                *error = std::system_category().message(getErrno());
+                *error = str(boost::format("%1%: %2%") %
+                    path_ %
+                    std::system_category().message(getErrno()));
             }
             return true;
         }
@@ -71,6 +75,7 @@ protected:
     virtual std::unique_ptr<Stream> openFd(const boost::filesystem::path &path, int &errno_)=0;
 
 private:
+    boost::filesystem::path path_;
     std::unique_ptr<Stream> stream_;
     int errno_ = 0;
 };
