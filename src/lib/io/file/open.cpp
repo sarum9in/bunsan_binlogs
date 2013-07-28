@@ -1,6 +1,6 @@
-#include "bunsan/binlogs/file/open.hpp"
-#include "bunsan/binlogs/file/ReadBuffer.hpp"
-#include "bunsan/binlogs/file/WriteBuffer.hpp"
+#include "bunsan/binlogs/io/file/open.hpp"
+#include "bunsan/binlogs/io/file/ReadBuffer.hpp"
+#include "bunsan/binlogs/io/file/WriteBuffer.hpp"
 
 #include "bunsan/binlogs/detail/make_unique.hpp"
 
@@ -8,9 +8,10 @@
 
 namespace bunsan {
 namespace binlogs {
+namespace io {
 namespace file {
 
-std::unique_ptr<binlogs::ReadBuffer> openReadOnly(
+std::unique_ptr<io::ReadBuffer> openReadOnly(
     const boost::filesystem::path &path,
     std::string *error)
 {
@@ -22,7 +23,7 @@ std::unique_ptr<binlogs::ReadBuffer> openReadOnly(
     return std::move(buffer_);
 }
 
-std::unique_ptr<binlogs::WriteBuffer> openWriteOnly(
+std::unique_ptr<io::WriteBuffer> openWriteOnly(
     const boost::filesystem::path &path,
     std::string *error)
 {
@@ -37,4 +38,4 @@ std::unique_ptr<binlogs::WriteBuffer> openWriteOnly(
 }
 }
 }
-
+}

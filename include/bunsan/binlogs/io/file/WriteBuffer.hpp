@@ -1,16 +1,16 @@
 #pragma once
 
-#include "bunsan/binlogs/file/BasicBuffer.hpp"
-
-#include "bunsan/binlogs/WriteBuffer.hpp"
+#include "bunsan/binlogs/io/file/BasicBuffer.hpp"
+#include "bunsan/binlogs/io/WriteBuffer.hpp"
 
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
 namespace bunsan {
 namespace binlogs {
+namespace io {
 namespace file {
 
-class WriteBuffer: public BasicBuffer<binlogs::WriteBuffer, google::protobuf::io::FileOutputStream> {
+class WriteBuffer: public BasicBuffer<io::WriteBuffer, google::protobuf::io::FileOutputStream> {
 public:
     google::protobuf::io::ZeroCopyOutputStream *ostream() override;
 
@@ -20,6 +20,7 @@ protected:
         int &errno_) override;
 };
 
+}
 }
 }
 }

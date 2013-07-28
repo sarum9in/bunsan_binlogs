@@ -6,6 +6,7 @@
 
 namespace bunsan {
 namespace binlogs {
+namespace io {
 
 class BaseBuffer: private boost::noncopyable {
 public:
@@ -18,5 +19,6 @@ public:
     virtual bool error(std::string *error=nullptr) const=0;
 };
 
+}
 }
 }

@@ -17,7 +17,6 @@ bunsan_add_shared_library(${PROJECT_NAME}
     ${proto_srcs}
 
     src/lib/BaseIo.cpp
-    src/lib/BaseBuffer.cpp
     src/lib/MessageType.cpp
     src/lib/MessageTypePool.cpp
     src/lib/LogReader.cpp
@@ -30,9 +29,10 @@ bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/v1/LogWriter.cpp
     src/lib/v1/LogReader.cpp
 
-    src/lib/file/ReadBuffer.cpp
-    src/lib/file/WriteBuffer.cpp
-    src/lib/file/open.cpp
+    src/lib/io/BaseBuffer.cpp
+    src/lib/io/file/ReadBuffer.cpp
+    src/lib/io/file/WriteBuffer.cpp
+    src/lib/io/file/open.cpp
 )
 bunsan_use(${PROJECT_NAME})
 

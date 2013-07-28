@@ -1,9 +1,10 @@
-#include "bunsan/binlogs/file/ReadBuffer.hpp"
+#include "bunsan/binlogs/io/file/ReadBuffer.hpp"
 
 #include "openFd.hpp"
 
 namespace bunsan {
 namespace binlogs {
+namespace io {
 namespace file {
 
 google::protobuf::io::ZeroCopyInputStream *ReadBuffer::istream()
@@ -18,6 +19,7 @@ std::unique_ptr<google::protobuf::io::FileInputStream> ReadBuffer::openFd(
     return file::openFd<google::protobuf::io::FileInputStream>(path, O_RDONLY, errno_);
 }
 
+}
 }
 }
 }

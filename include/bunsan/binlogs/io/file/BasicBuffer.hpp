@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bunsan/binlogs/WriteBuffer.hpp"
+#include "bunsan/binlogs/io/WriteBuffer.hpp"
 
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
@@ -10,6 +10,7 @@
 
 namespace bunsan {
 namespace binlogs {
+namespace io {
 namespace file {
 
 template <typename BaseBuffer, typename Stream>
@@ -76,6 +77,7 @@ private:
     int errno_ = 0;
 };
 
+}
 }
 }
 }

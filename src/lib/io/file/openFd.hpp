@@ -9,6 +9,7 @@
 
 namespace bunsan {
 namespace binlogs {
+namespace io {
 namespace file {
 
 template <typename Stream>
@@ -36,6 +37,7 @@ std::unique_ptr<Stream> openFd(const boost::filesystem::path &path, const int fl
     return std::move(stream);
 }
 
+}
 }
 }
 }
