@@ -17,6 +17,7 @@ bunsan_add_shared_library(${PROJECT_NAME}
     ${proto_srcs}
 
     src/lib/BaseIo.cpp
+    src/lib/BaseBuffer.cpp
     src/lib/MessageType.cpp
     src/lib/MessageTypePool.cpp
     src/lib/LogReader.cpp
