@@ -34,11 +34,13 @@ BOOST_AUTO_TEST_CASE(openRead)
     std::string error;
     std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(tmp, &error);
     BOOST_REQUIRE_MESSAGE(buffer, error);
-    google::protobuf::io::CodedInputStream cis(buffer->istream());
-    std::string data;
-    BOOST_REQUIRE(cis.ReadString(&data, SOME_DATA.size()));
-    BOOST_CHECK_EQUAL(data, SOME_DATA);
-    buffer->close();
+    {
+        google::protobuf::io::CodedInputStream is(buffer->istream());
+        std::string data;
+        BOOST_REQUIRE(is.ReadString(&data, SOME_DATA.size()));
+        BOOST_CHECK_EQUAL(data, SOME_DATA);
+    }
+    BOOST_CHECK(buffer->close());
     BOOST_CHECK(buffer->closed());
     BOOST_CHECK(!buffer->error());
 }
