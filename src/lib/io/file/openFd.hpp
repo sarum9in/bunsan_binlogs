@@ -26,7 +26,7 @@ std::unique_ptr<Stream> openFd(const boost::filesystem::path &path, const int fl
         }
     };
 
-    fd = ::open(path.c_str(), flags);
+    fd = ::open(path.c_str(), flags, 0666);
     if (fd < 0) {
         errno_ = errno;
         return false;
