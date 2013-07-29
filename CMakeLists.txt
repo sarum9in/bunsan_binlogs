@@ -33,6 +33,8 @@ bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/io/file/ReadBuffer.cpp
     src/lib/io/file/WriteBuffer.cpp
     src/lib/io/file/open.cpp
+
+    src/lib/io/filter/gzip.cpp
 )
 bunsan_use(${PROJECT_NAME})
 
