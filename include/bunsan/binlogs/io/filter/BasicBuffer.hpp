@@ -39,8 +39,8 @@ public:
     bool close() override
     {
         const bool streamOk = streamClose();
-        const bool sourceOk = source_->close();
         stream_.reset();
+        const bool sourceOk = source_->close();
         return streamOk && sourceOk;
     }
 
