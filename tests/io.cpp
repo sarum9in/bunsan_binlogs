@@ -53,6 +53,32 @@ BOOST_AUTO_TEST_CASE(openReadError)
     BOOST_TEST_MESSAGE(error);
 }
 
+BOOST_AUTO_TEST_CASE(openWrite)
+{
+    const std::string SOME_DATA = "Hello, world!";
+    std::string error;
+    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(tmp, &error);
+    BOOST_REQUIRE_MESSAGE(buffer, error);
+    {
+        google::protobuf::io::CodedOutputStream os(buffer->ostream());
+        os.WriteString(SOME_DATA);
+        BOOST_REQUIRE(!os.HadError());
+    }
+    BOOST_REQUIRE(buffer->close());
+    BOOST_CHECK(!buffer->error());
+    BOOST_CHECK_EQUAL(bunsan::testing::filesystem::read_data(tmp), SOME_DATA);
+}
+
+BOOST_AUTO_TEST_CASE(openWriteError)
+{
+    bunsan::testing::filesystem::write_data(tmp, "");
+    boost::filesystem::permissions(tmp, boost::filesystem::no_perms);
+    std::string error;
+    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(tmp, &error);
+    BOOST_CHECK(!buffer);
+    BOOST_TEST_MESSAGE(error);
+}
+
 BOOST_AUTO_TEST_SUITE_END() // file_
 
 BOOST_AUTO_TEST_SUITE_END() // io_
