@@ -1,24 +1,32 @@
 #pragma once
 
+#include "bunsan/binlogs/io/ReadBuffer.hpp"
+#include "bunsan/binlogs/io/WriteBuffer.hpp"
 #include "bunsan/binlogs/LogReader.hpp"
 #include "bunsan/binlogs/LogWriter.hpp"
+#include "bunsan/binlogs/NamedLogWriter.hpp"
 
-#include <google/protobuf/descriptor.pb.h>
-#include <google/protobuf/io/zero_copy_stream.h>
+#include <boost/filesystem/path.hpp>
 
 #include <memory>
 
 namespace bunsan {
 namespace binlogs {
 
-/// \note calls readHeader()
+/// \note calls Init()
 std::unique_ptr<LogReader> openReadOnly(
-    google::protobuf::io::ZeroCopyInputStream *const input,
+    std::unique_ptr<io::ReadBuffer> &&input,
     std::string *error=nullptr);
 
-/// \note calls writeHeader()
+/// \note calls Init()
 std::unique_ptr<LogWriter> openWriteOnly(
-    google::protobuf::io::ZeroCopyOutputStream *const output,
+    std::unique_ptr<io::WriteBuffer> &&output,
+    const Header &header,
+    std::string *error=nullptr);
+
+/// \note calls Init()
+std::unique_ptr<NamedLogWriter> openWriteOnly(
+    const boost::filesystem::path &path,
     const Header &header,
     std::string *error=nullptr);
 

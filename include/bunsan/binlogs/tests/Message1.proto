@@ -1,0 +1,6 @@
+package bunsan.binlogs.tests;
+
+message Message1 {
+    required string key = 1;
+    required string value = 2;
+};

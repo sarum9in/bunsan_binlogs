@@ -50,6 +50,11 @@ bool MessageTypePool::Init(const Header &header, std::string *error)
     return true;
 }
 
+Header MessageTypePool::header() const
+{
+    return header_;
+}
+
 MessageTypePool::Id MessageTypePool::typeId(const std::string &typeName) const
 {
     for (Id id = 0; id < messageTypes_.size(); ++id) {

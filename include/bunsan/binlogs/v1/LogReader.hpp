@@ -1,5 +1,6 @@
 #pragma once
 
+#include "bunsan/binlogs/io/ReadBuffer.hpp"
 #include "bunsan/binlogs/v1/HeaderData.pb.h"
 #include "bunsan/binlogs/v1/MessageTypePool.hpp"
 
@@ -18,9 +19,9 @@ namespace v1 {
 
 class LogReader: public binlogs::LogReader {
 public:
-    explicit LogReader(google::protobuf::io::ZeroCopyInputStream *const input);
+    explicit LogReader(std::unique_ptr<io::ReadBuffer> &&input);
 
-    bool readHeader(std::string *error=nullptr) override;
+    bool Init(std::string *error=nullptr) override;
 
     bool read(google::protobuf::Message &message, std::string *error=nullptr) override;
 
@@ -36,7 +37,7 @@ private:
     bool read_(google::protobuf::Message &message, std::string *error);
     bool read_(google::protobuf::uint32 &uint32, const std::string &field, std::string *error);
 
-    google::protobuf::io::ZeroCopyInputStream *input_;
+    std::unique_ptr<io::ReadBuffer> input_;
     boost::optional<const MessageType *> nextMessageType_;
     std::unique_ptr<HeaderData> header_;
     MessageTypePool pool_;
