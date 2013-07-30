@@ -2,6 +2,8 @@
 #include "bunsan/binlogs/tests/Message1.pb.h"
 #include "bunsan/binlogs/tests/Message2.pb.h"
 
+#include <google/protobuf/descriptor.h>
+
 #include <mutex>
 
 namespace bunsan {
