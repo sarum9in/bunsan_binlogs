@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bunsan/binlogs/io/WriteBuffer.hpp"
+#include "bunsan/binlogs/v1/BaseLogWriter.hpp"
 #include "bunsan/binlogs/v1/HeaderData.pb.h"
 #include "bunsan/binlogs/v1/MessageTypePool.hpp"
 
@@ -16,7 +17,7 @@ namespace bunsan {
 namespace binlogs {
 namespace v1 {
 
-class LogWriter: public binlogs::LogWriter {
+class LogWriter: public BaseLogWriter {
 public:
     explicit LogWriter(std::unique_ptr<io::WriteBuffer> &&output);
 
@@ -30,17 +31,14 @@ public:
 
     State state() const override;
 
-    const binlogs::MessageTypePool &messageTypePool() const override;
+protected:
+    io::WriteBuffer *output__() override;
+
+    const v1::MessageTypePool &messageTypePool__() const override;
+
+    using BaseLogWriter::write;
 
 private:
-    bool write_(const std::string *const typeName,
-                const google::protobuf::Message &message,
-                std::string *error);
-
-    bool hadError(const google::protobuf::io::CodedOutputStream &output,
-                  const std::string &msg,
-                  std::string *error);
-
     std::unique_ptr<io::WriteBuffer> output_;
     std::unique_ptr<HeaderData> headerData_;
     MessageTypePool pool_;

@@ -26,9 +26,10 @@ bool LogWriter::Init(const Header &header, std::string *error)
     for (const std::string &type: header.types) {
         headerData_->add_types()->set_name(type);
     }
-    if (!write_(nullptr, *headerData_, error)) {
+    state_ = write(nullptr, *headerData_, error);
+    if (state_ != State::kOk) {
         state_ = State::kBad;
-        output_ = nullptr;
+        output_.reset();
         if (error) {
             *error = "Unable to write header: " + *error;
         }
@@ -45,63 +46,18 @@ bool LogWriter::write(const std::string &typeName,
         BOOST_ASSERT(headerData_);
         // FIXME We should check that message has type defined in header.
         // Or should we create template-based wrapper for this class?
-        return write_(&typeName, message, error);
-    } else {
-        return false;
-    }
-}
-
-bool LogWriter::write_(const std::string *const typeName,
-                       const google::protobuf::Message &message,
-                       std::string *error)
-{
-    if (output_) {
-        google::protobuf::io::CodedOutputStream output(output_.get());
-        if (typeName) {
-            const google::protobuf::uint32 messageType = pool_.typeId(*typeName);
-            if (messageType == MessageTypePool::npos) {
-                state_ = State::kFail;
-                if (error) {
-                    *error = str(boost::format("Type \"%1%\" is not registered."));
-                }
-                return false;
-            }
-            output.WriteLittleEndian32(messageType);
-            if (hadError(output, "Unable to write message type.", error)) {
-                return false;
-            }
-        }
-        const google::protobuf::uint32 messageSize = message.ByteSize();
-        output.WriteLittleEndian32(messageSize);
-        if (hadError(output, "Unable to write message size.", error)) {
+        state_ = write(&typeName, message, error);
+        switch (state_) {
+        case State::kOk:
+            return true;
+        case State::kBad:
+        case State::kEof:
+            output_.reset();
+        case State::kFail:
             return false;
         }
-        message.SerializeWithCachedSizes(&output);
-        if (hadError(output, "Unable to write message.", error)) {
-            return false;
-        }
-        BOOST_ASSERT(!output.HadError());
-        state_ = State::kOk;
-        return true;
-    } else {
-        return false;
     }
-}
-
-bool LogWriter::hadError(const google::protobuf::io::CodedOutputStream &output,
-                         const std::string &msg,
-                         std::string *error)
-{
-    if (output.HadError()) {
-        state_ = State::kBad;
-        output_ = nullptr;
-        if (error) {
-            *error = msg;
-        }
-        return true;
-    } else {
-        return false;
-    }
+    return false;
 }
 
 bool LogWriter::close(std::string *error)
@@ -120,7 +76,12 @@ LogWriter::State LogWriter::state() const
     return state_;
 }
 
-const binlogs::MessageTypePool &LogWriter::messageTypePool() const
+io::WriteBuffer *LogWriter::output__()
+{
+    return output_.get();
+}
+
+const v1::MessageTypePool &LogWriter::messageTypePool__() const
 {
     return pool_;
 }
