@@ -19,6 +19,11 @@ std::unique_ptr<LogReader> openReadOnly(
     std::string *error=nullptr);
 
 /// \note calls Init()
+std::unique_ptr<LogReader> openReadOnly(
+    const boost::filesystem::path &path,
+    std::string *error=nullptr);
+
+/// \note calls Init()
 std::unique_ptr<LogWriter> openWriteOnly(
     std::unique_ptr<io::WriteBuffer> &&output,
     const Header &header,
