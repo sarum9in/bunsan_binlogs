@@ -7,7 +7,7 @@
 namespace bunsan {
 namespace binlogs {
 
-class NamedLogWriter: public LogWriter {
+class NamedLogWriter: public virtual LogWriter {
 public:
     virtual boost::filesystem::path path() const=0;
 
