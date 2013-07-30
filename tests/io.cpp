@@ -5,6 +5,7 @@
 #include "bunsan/binlogs/io/filter/gzip.hpp"
 
 #include "bunsan/testing/filesystem/read_data.hpp"
+#include "bunsan/testing/filesystem/tempfiles.hpp"
 #include "bunsan/testing/filesystem/write_data.hpp"
 
 #include <google/protobuf/io/coded_stream.h>
@@ -16,15 +17,10 @@ using namespace bunsan::binlogs;
 
 BOOST_AUTO_TEST_SUITE(io_)
 
-struct FileFixture {
-    ~FileFixture()
-    {
-        boost::filesystem::remove(tmp);
-    }
+struct FileFixture: private bunsan::testing::filesystem::tempfiles {
+    FileFixture(): tmp(allocate()) {}
 
-    const boost::filesystem::path tmp =
-        boost::filesystem::temp_directory_path() /
-        boost::filesystem::unique_path();
+    boost::filesystem::path tmp;
 };
 
 BOOST_FIXTURE_TEST_SUITE(file_, FileFixture)
