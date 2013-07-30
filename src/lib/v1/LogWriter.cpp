@@ -10,8 +10,8 @@ namespace bunsan {
 namespace binlogs {
 namespace v1 {
 
-LogWriter::LogWriter(google::protobuf::io::ZeroCopyOutputStream *const output):
-    output_(output)
+LogWriter::LogWriter(std::unique_ptr<io::WriteBuffer> &&output):
+    output_(std::move(output))
 {
     BOOST_ASSERT(output_);
 }
@@ -56,7 +56,7 @@ bool LogWriter::write_(const std::string *const typeName,
                        std::string *error)
 {
     if (output_) {
-        google::protobuf::io::CodedOutputStream output(output_);
+        google::protobuf::io::CodedOutputStream output(output_.get());
         if (typeName) {
             const google::protobuf::uint32 messageType = pool_.typeId(*typeName);
             if (messageType == MessageTypePool::npos) {

@@ -10,8 +10,8 @@ namespace bunsan {
 namespace binlogs {
 namespace v1 {
 
-LogReader::LogReader(google::protobuf::io::ZeroCopyInputStream *const input):
-    input_(input)
+LogReader::LogReader(std::unique_ptr<io::ReadBuffer> &&input):
+    input_(std::move(input))
 {
     BOOST_ASSERT(input_);
 }
@@ -96,7 +96,7 @@ bool LogReader::read_(google::protobuf::Message &message, std::string *error)
 
         bool messageReadResult;
         {
-            google::protobuf::io::CodedInputStream input(input_);
+            google::protobuf::io::CodedInputStream input(input_.get());
             const google::protobuf::io::CodedInputStream::Limit limit =
                 input.PushLimit(static_cast<int>(messageSize));
             messageReadResult = message.ParseFromCodedStream(&input);
@@ -127,7 +127,7 @@ bool LogReader::read_(google::protobuf::Message &message, std::string *error)
 
 bool LogReader::read_(google::protobuf::uint32 &uint32, const std::string &field, std::string *error)
 {
-    google::protobuf::io::CodedInputStream input(input_);
+    google::protobuf::io::CodedInputStream input(input_.get());
     if (!input.ReadLittleEndian32(&uint32)) {
         state_ = State::kBad;
         input_ = nullptr;
