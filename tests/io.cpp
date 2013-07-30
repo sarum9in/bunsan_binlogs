@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(openRead)
 BOOST_AUTO_TEST_CASE(openReadError)
 {
     std::string error;
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(tmp, &error);
+    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly("/path/that/does/not/exist", &error);
     BOOST_CHECK(!buffer);
     BOOST_TEST_MESSAGE(error);
 }
