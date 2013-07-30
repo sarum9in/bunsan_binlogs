@@ -1,7 +1,10 @@
 #include "bunsan/binlogs/LogFactory.hpp"
 
+#include "bunsan/binlogs/io/file/open.hpp"
+#include "bunsan/binlogs/io/filter/gzip.hpp"
 #include "bunsan/binlogs/v1/LogReader.hpp"
 #include "bunsan/binlogs/v1/LogWriter.hpp"
+#include "bunsan/binlogs/v1/NamedLogWriter.hpp"
 
 #include "bunsan/binlogs/detail/make_unique.hpp"
 
@@ -17,7 +20,33 @@ namespace bunsan {
 namespace binlogs {
 
 namespace {
+
 const boost::uuids::uuid MAGIC_FORMAT_V1 = boost::uuids::string_generator()("f6a03dc0-eaf5-11e2-91e2-0800200c9a66");
+
+bool writeMagic(io::WriteBuffer &output, std::string *error)
+{
+    google::protobuf::io::CodedOutputStream outp(&output);
+    outp.WriteRaw(&MAGIC_FORMAT_V1, static_cast<int>(MAGIC_FORMAT_V1.size()));
+    if (outp.HadError()) {
+        if (error) {
+            *error = "Unable to write format magic.";
+        }
+        return false;
+    }
+    return true;
+}
+
+std::unique_ptr<io::WriteBuffer> openFileWriteOnly(const boost::filesystem::path &path, std::string *error)
+{
+    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(path, error);
+    if (!buffer) return buffer;
+    buffer = io::filter::gzip::open(std::move(buffer), error);
+    if (!writeMagic(*buffer, error)) {
+        buffer.reset();
+    }
+    return buffer;
+}
+
 }
 
 std::unique_ptr<LogReader> openReadOnly(
@@ -56,19 +85,28 @@ std::unique_ptr<LogWriter> openWriteOnly(
     std::string *error)
 {
     BOOST_ASSERT(output);
-    {
-        google::protobuf::io::CodedOutputStream outp(output.get());
-        outp.WriteRaw(&MAGIC_FORMAT_V1, static_cast<int>(MAGIC_FORMAT_V1.size()));
-        if (outp.HadError()) {
-            if (error) {
-                *error = "Unable to write format magic.";
-            }
-            return nullptr;
-        }
+    if (!writeMagic(*output, error)) {
+        return nullptr;
     }
     std::unique_ptr<LogWriter> logWriter = detail::make_unique<v1::LogWriter>(std::move(output));
     if (!logWriter->Init(header, error)) {
         logWriter.reset();
+    }
+    return logWriter;
+}
+
+std::unique_ptr<NamedLogWriter> openWriteOnly(
+    const boost::filesystem::path &path,
+    const Header &header,
+    std::string *error)
+{
+    std::unique_ptr<NamedLogWriter> logWriter =
+        detail::make_unique<v1::NamedLogWriter>(openFileWriteOnly);
+    if (!logWriter->Init(header, error)) {
+        return nullptr;
+    }
+    if (!logWriter->open(path, error)) {
+        return nullptr;
     }
     return logWriter;
 }
