@@ -104,11 +104,15 @@ bool LogWriter::hadError(const google::protobuf::io::CodedOutputStream &output,
     }
 }
 
-bool LogWriter::close(std::string */*error*/)
+bool LogWriter::close(std::string *error)
 {
     state_ = State::kEof;
-    output_ = nullptr;
-    return true;
+    const bool ret = output_->close();
+    if (!ret) {
+        BOOST_VERIFY(output_->error(error));
+    }
+    output_.reset();
+    return ret;
 }
 
 LogWriter::State LogWriter::state() const
