@@ -30,14 +30,8 @@ Header getHeader()
 std::unique_ptr<LogReader> openLogReader(const boost::filesystem::path &path)
 {
     std::string error;
-
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path, &error);
-    BOOST_REQUIRE_MESSAGE(buffer, error);
-    buffer = io::filter::gzip::open(std::move(buffer), &error);
-    BOOST_REQUIRE_MESSAGE(buffer, error);
-    std::unique_ptr<LogReader> logReader = openReadOnly(std::move(buffer), &error);
+    std::unique_ptr<LogReader> logReader = openReadOnly(path, &error);
     BOOST_REQUIRE_MESSAGE(logReader, error);
-
     return logReader;
 }
 

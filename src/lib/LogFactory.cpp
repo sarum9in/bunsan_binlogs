@@ -36,6 +36,14 @@ bool writeMagic(io::WriteBuffer &output, std::string *error)
     return true;
 }
 
+std::unique_ptr<io::ReadBuffer> openFileReadOnly(const boost::filesystem::path &path, std::string *error)
+{
+    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path, error);
+    if (!buffer) return buffer;
+    buffer = io::filter::gzip::open(std::move(buffer), error);
+    return buffer;
+}
+
 std::unique_ptr<io::WriteBuffer> openFileWriteOnly(const boost::filesystem::path &path, std::string *error)
 {
     std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(path, error);
@@ -77,6 +85,15 @@ std::unique_ptr<LogReader> openReadOnly(
         logReader.reset();
     }
     return logReader;
+}
+
+std::unique_ptr<LogReader> openReadOnly(
+    const boost::filesystem::path &path,
+    std::string *error)
+{
+    auto input = openFileReadOnly(path, error);
+    if (!input) return nullptr;
+    return openReadOnly(std::move(input), error);
 }
 
 std::unique_ptr<LogWriter> openWriteOnly(
