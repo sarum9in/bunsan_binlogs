@@ -5,7 +5,7 @@
 #include "bunsan/binlogs/io/filter/gzip.hpp"
 
 #include "bunsan/testing/filesystem/read_data.hpp"
-#include "bunsan/testing/filesystem/tempfiles.hpp"
+#include "bunsan/testing/filesystem/tempfile.hpp"
 #include "bunsan/testing/filesystem/write_data.hpp"
 
 #include <google/protobuf/io/coded_stream.h>
@@ -17,20 +17,14 @@ using namespace bunsan::binlogs;
 
 BOOST_AUTO_TEST_SUITE(io_)
 
-struct FileFixture: private bunsan::testing::filesystem::tempfiles {
-    FileFixture(): tmp(allocate()) {}
-
-    boost::filesystem::path tmp;
-};
-
-BOOST_FIXTURE_TEST_SUITE(file_, FileFixture)
+BOOST_FIXTURE_TEST_SUITE(file_, bunsan::testing::filesystem::tempfile)
 
 BOOST_AUTO_TEST_CASE(openRead)
 {
     const std::string SOME_DATA = "Hello, world!";
-    bunsan::testing::filesystem::write_data(tmp, SOME_DATA);
+    bunsan::testing::filesystem::write_data(path, SOME_DATA);
     std::string error;
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(tmp, &error);
+    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path, &error);
     BOOST_REQUIRE_MESSAGE(buffer, error);
     {
         google::protobuf::io::CodedInputStream is(buffer.get());
@@ -55,7 +49,7 @@ BOOST_AUTO_TEST_CASE(openWrite)
 {
     const std::string SOME_DATA = "Hello, world!";
     std::string error;
-    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(tmp, &error);
+    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(path, &error);
     BOOST_REQUIRE_MESSAGE(buffer, error);
     {
         google::protobuf::io::CodedOutputStream os(buffer.get());
@@ -64,15 +58,14 @@ BOOST_AUTO_TEST_CASE(openWrite)
     }
     BOOST_REQUIRE(buffer->close());
     BOOST_CHECK(!buffer->error());
-    BOOST_CHECK_EQUAL(bunsan::testing::filesystem::read_data(tmp), SOME_DATA);
+    BOOST_CHECK_EQUAL(bunsan::testing::filesystem::read_data(path), SOME_DATA);
 }
 
 BOOST_AUTO_TEST_CASE(openWriteError)
 {
-    bunsan::testing::filesystem::write_data(tmp, "");
-    boost::filesystem::permissions(tmp, boost::filesystem::no_perms);
+    boost::filesystem::permissions(path, boost::filesystem::no_perms);
     std::string error;
-    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(tmp, &error);
+    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(path, &error);
     BOOST_CHECK(!buffer);
     BOOST_TEST_MESSAGE(error);
 }
@@ -81,7 +74,7 @@ BOOST_AUTO_TEST_SUITE_END() // file_
 
 BOOST_AUTO_TEST_SUITE(filter_)
 
-BOOST_FIXTURE_TEST_SUITE(gzip_, FileFixture)
+BOOST_FIXTURE_TEST_SUITE(gzip_, bunsan::testing::filesystem::tempfile)
 
 const std::string SOME_DATA = "Hello, world!";
 
@@ -134,9 +127,9 @@ void writeGzip(const boost::filesystem::path &path, const std::string &data)
 
 BOOST_AUTO_TEST_CASE(openRead)
 {
-    writeGzip(tmp, SOME_DATA);
+    writeGzip(path, SOME_DATA);
     std::string error;
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(tmp, &error);
+    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path, &error);
     BOOST_REQUIRE_MESSAGE(buffer, error);
     buffer = io::filter::gzip::open(std::move(buffer), &error);
     BOOST_REQUIRE_MESSAGE(buffer, error);
@@ -153,9 +146,9 @@ BOOST_AUTO_TEST_CASE(openRead)
 
 BOOST_AUTO_TEST_CASE(openReadError)
 {
-    bunsan::testing::filesystem::write_data(tmp, "NOT GZIP DATA");
+    bunsan::testing::filesystem::write_data(path, "NOT GZIP DATA");
     std::string error;
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(tmp, &error);
+    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path, &error);
     BOOST_REQUIRE_MESSAGE(buffer, error);
     buffer = io::filter::gzip::open(std::move(buffer), &error);
     if (buffer) {
@@ -164,13 +157,13 @@ BOOST_AUTO_TEST_CASE(openReadError)
         BOOST_REQUIRE(!is.ReadString(&data, 10));
         BOOST_REQUIRE(buffer->error(&error));
     }
-    BOOST_TEST_MESSAGE("Passed error test: " << tmp << ": " << error);
+    BOOST_TEST_MESSAGE("Passed error test: " << path << ": " << error);
 }
 
 BOOST_AUTO_TEST_CASE(openWrite)
 {
     std::string error;
-    std::unique_ptr<io::WriteBuffer> buffer = io::filter::gzip::open(io::file::openWriteOnly(tmp, &error));
+    std::unique_ptr<io::WriteBuffer> buffer = io::filter::gzip::open(io::file::openWriteOnly(path, &error));
     BOOST_REQUIRE_MESSAGE(buffer, error);
     {
         google::protobuf::io::CodedOutputStream os(buffer.get());
@@ -179,8 +172,8 @@ BOOST_AUTO_TEST_CASE(openWrite)
     }
     BOOST_REQUIRE(buffer->close());
     BOOST_CHECK(!buffer->error());
-    checkIsGzip(tmp);
-    BOOST_CHECK_EQUAL(readGzip(tmp), SOME_DATA);
+    checkIsGzip(path);
+    BOOST_CHECK_EQUAL(readGzip(path), SOME_DATA);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // gzip_
