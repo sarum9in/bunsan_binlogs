@@ -139,11 +139,15 @@ bool LogReader::read_(google::protobuf::uint32 &uint32, const std::string &field
     return true;
 }
 
-bool LogReader::close(std::string */*error*/)
+bool LogReader::close(std::string *error)
 {
     state_ = State::kEof;
-    input_ = nullptr;
-    return true;
+    const bool ret = input_->close();
+    if (!ret) {
+        BOOST_VERIFY(input_->error(error));
+    }
+    input_.reset();
+    return ret;
 }
 
 LogReader::State LogReader::state() const
