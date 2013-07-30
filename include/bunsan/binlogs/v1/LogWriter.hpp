@@ -32,14 +32,11 @@ public:
     State state() const override;
 
 protected:
-    io::WriteBuffer *output__() override;
-
     const v1::MessageTypePool &messageTypePool__() const override;
 
     using BaseLogWriter::write;
 
 private:
-    std::unique_ptr<io::WriteBuffer> output_;
     std::unique_ptr<HeaderData> headerData_;
     MessageTypePool pool_;
     State state_ = State::kOk;

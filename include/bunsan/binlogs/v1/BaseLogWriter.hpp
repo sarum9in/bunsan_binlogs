@@ -21,13 +21,15 @@ public:
     const binlogs::MessageTypePool &messageTypePool() const override;
 
 protected:
+    void setOutput(std::unique_ptr<io::WriteBuffer> &&output);
+    bool closeOutput(std::string *error=nullptr);
+    bool hasOutput() const;
+
     bool writeHeader(std::string *error=nullptr);
 
     State write(const std::string *const typeName,
                 const google::protobuf::Message &message,
                 std::string *error);
-
-    virtual io::WriteBuffer *output__()=0;
 
     virtual const v1::MessageTypePool &messageTypePool__() const=0;
 
@@ -36,6 +38,8 @@ private:
                   const std::string &msg,
                   State &state,
                   std::string *error);
+
+    std::unique_ptr<io::WriteBuffer> output_;
 };
 
 }
