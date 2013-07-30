@@ -16,7 +16,7 @@ namespace bunsan {
 namespace binlogs {
 namespace v1 {
 
-class BaseLogWriter: public binlogs::LogWriter {
+class BaseLogWriter: public virtual binlogs::LogWriter {
 public:
     const binlogs::MessageTypePool &messageTypePool() const override;
 
