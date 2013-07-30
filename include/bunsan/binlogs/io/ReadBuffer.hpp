@@ -8,9 +8,21 @@ namespace bunsan {
 namespace binlogs {
 namespace io {
 
-class ReadBuffer: public virtual BaseBuffer {
+class ReadBuffer:
+    public virtual BaseBuffer,
+    public virtual google::protobuf::io::ZeroCopyInputStream {
 public:
-    virtual google::protobuf::io::ZeroCopyInputStream *istream()=0;
+    typedef google::protobuf::io::ZeroCopyInputStream Stream;
+
+public:
+    bool Next(const void **data, int *size) override;
+    void BackUp(int count) override;
+    bool Skip(int count) override;
+    google::protobuf::int64 ByteCount() const override;
+
+protected:
+    virtual Stream *stream()=0;
+    virtual const Stream *stream() const=0;
 };
 
 }

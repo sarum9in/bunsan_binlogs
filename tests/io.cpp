@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(openRead)
     std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(tmp, &error);
     BOOST_REQUIRE_MESSAGE(buffer, error);
     {
-        google::protobuf::io::CodedInputStream is(buffer->istream());
+        google::protobuf::io::CodedInputStream is(buffer.get());
         std::string data;
         BOOST_REQUIRE(is.ReadString(&data, SOME_DATA.size()));
         BOOST_CHECK_EQUAL(data, SOME_DATA);
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(openWrite)
     std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(tmp, &error);
     BOOST_REQUIRE_MESSAGE(buffer, error);
     {
-        google::protobuf::io::CodedOutputStream os(buffer->ostream());
+        google::protobuf::io::CodedOutputStream os(buffer.get());
         os.WriteString(SOME_DATA);
         BOOST_REQUIRE(!os.HadError());
     }
@@ -104,7 +104,7 @@ std::string readGzip(const boost::filesystem::path &path)
     std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path, &error);
     BOOST_REQUIRE_MESSAGE(buffer, error);
     {
-        google::protobuf::io::GzipInputStream gbuffer(buffer->istream());
+        google::protobuf::io::GzipInputStream gbuffer(buffer.get());
         const void *chunk;
         int size;
         while (gbuffer.Next(&chunk, &size)) {
@@ -125,7 +125,7 @@ void writeGzip(const boost::filesystem::path &path, const std::string &data)
     std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(path, &error);
     BOOST_REQUIRE_MESSAGE(buffer, error);
     {
-        google::protobuf::io::GzipOutputStream gbuffer(buffer->ostream());
+        google::protobuf::io::GzipOutputStream gbuffer(buffer.get());
         {
             google::protobuf::io::CodedOutputStream os(&gbuffer);
             os.WriteString(data);
@@ -145,7 +145,7 @@ BOOST_AUTO_TEST_CASE(openRead)
     buffer = io::filter::gzip::open(std::move(buffer), &error);
     BOOST_REQUIRE_MESSAGE(buffer, error);
     {
-        google::protobuf::io::CodedInputStream is(buffer->istream());
+        google::protobuf::io::CodedInputStream is(buffer.get());
         std::string data;
         BOOST_REQUIRE(is.ReadString(&data, SOME_DATA.size()));
         BOOST_CHECK_EQUAL(data, SOME_DATA);
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE(openReadError)
     BOOST_REQUIRE_MESSAGE(buffer, error);
     buffer = io::filter::gzip::open(std::move(buffer), &error);
     if (buffer) {
-        google::protobuf::io::CodedInputStream is(buffer->istream());
+        google::protobuf::io::CodedInputStream is(buffer.get());
         std::string data;
         BOOST_REQUIRE(!is.ReadString(&data, 10));
         BOOST_REQUIRE(buffer->error(&error));
@@ -177,7 +177,7 @@ BOOST_AUTO_TEST_CASE(openWrite)
     std::unique_ptr<io::WriteBuffer> buffer = io::filter::gzip::open(io::file::openWriteOnly(tmp, &error));
     BOOST_REQUIRE_MESSAGE(buffer, error);
     {
-        google::protobuf::io::CodedOutputStream os(buffer->ostream());
+        google::protobuf::io::CodedOutputStream os(buffer.get());
         os.WriteString(SOME_DATA);
         BOOST_REQUIRE(!os.HadError());
     }

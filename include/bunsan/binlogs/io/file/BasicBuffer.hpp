@@ -14,7 +14,7 @@ namespace binlogs {
 namespace io {
 namespace file {
 
-template <typename BaseBuffer, typename Stream>
+template <typename BaseBuffer, typename StreamImpl>
 class BasicBuffer: public BaseBuffer {
 public:
     /// \return false if !closed()
@@ -26,11 +26,6 @@ public:
         path_ = path;
         stream_ = openFd(path, errno_);
         return !getErrno();
-    }
-
-    Stream *stream()
-    {
-        return stream_.get();
     }
 
     bool close() override
@@ -72,11 +67,19 @@ public:
     }
 
 protected:
-    virtual std::unique_ptr<Stream> openFd(const boost::filesystem::path &path, int &errno_)=0;
+    virtual std::unique_ptr<StreamImpl> openFd(const boost::filesystem::path &path, int &errno_)=0;
+
+    typename BaseBuffer::Stream *stream() override { return stream_.get(); }
+    const typename BaseBuffer::Stream *stream() const override { return stream_.get(); }
+
+    StreamImpl *stream__()
+    {
+        return stream_.get();
+    }
 
 private:
     boost::filesystem::path path_;
-    std::unique_ptr<Stream> stream_;
+    std::unique_ptr<StreamImpl> stream_;
     int errno_ = 0;
 };
 

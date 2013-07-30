@@ -31,8 +31,8 @@ protected:
 
     bool streamClose() override
     {
-        if (this->stream()->ZlibErrorMessage()) {
-            error_ = detail::make_unique<std::string>(this->stream()->ZlibErrorMessage());
+        if (this->stream__()->ZlibErrorMessage()) {
+            error_ = detail::make_unique<std::string>(this->stream__()->ZlibErrorMessage());
         }
         // Gzip*Stream does not require closing
         return true;
@@ -47,28 +47,15 @@ private:
             }
             return nullptr;
         }
-        return this->stream()->ZlibErrorMessage();
+        return this->stream__()->ZlibErrorMessage();
     }
 
 private:
     std::unique_ptr<std::string> error_;
 };
 
-class GzipReadBuffer: public GzipBasicBuffer<ReadBuffer, google::protobuf::io::GzipInputStream> {
-public:
-    google::protobuf::io::ZeroCopyInputStream *istream() override
-    {
-        return this->stream();
-    }
-};
-
-class GzipWriteBuffer: public GzipBasicBuffer<WriteBuffer, google::protobuf::io::GzipOutputStream> {
-public:
-    google::protobuf::io::ZeroCopyOutputStream *ostream() override
-    {
-        return this->stream();
-    }
-};
+class GzipReadBuffer: public GzipBasicBuffer<ReadBuffer, google::protobuf::io::GzipInputStream> {};
+class GzipWriteBuffer: public GzipBasicBuffer<WriteBuffer, google::protobuf::io::GzipOutputStream> {};
 
 }
 

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "bunsan/binlogs/io/BaseBuffer.hpp"
-#include "bunsan/binlogs/io/generic/get_stream.hpp"
 
 #include "bunsan/binlogs/detail/make_unique.hpp"
 
@@ -12,7 +11,7 @@ namespace binlogs {
 namespace io {
 namespace filter {
 
-template <typename BaseBuffer, typename Stream>
+template <typename BaseBuffer, typename StreamImpl>
 class BasicBuffer: public BaseBuffer {
 public:
     /// \return false if !closed()
@@ -25,16 +24,9 @@ public:
         BOOST_ASSERT(!source->closed());
         source_ = std::move(source);
         BOOST_ASSERT(source_);
-        stream_ = detail::make_unique<Stream>(
-            generic::get_stream<BaseBuffer>::get(this->source()));
+        stream_ = detail::make_unique<StreamImpl>(this->source());
         return !streamError();
     }
-
-    BaseBuffer *source() { return source_.get(); }
-    const BaseBuffer *source() const { return source_.get(); }
-
-    Stream *stream() { return stream_.get(); }
-    const Stream *stream() const { return stream_.get(); }
 
     bool close() override
     {
@@ -64,10 +56,19 @@ protected:
     virtual bool streamError(std::string *error=nullptr) const=0;
     virtual bool streamClose()=0;
 
+    typename BaseBuffer::Stream *stream() override { return stream_.get(); }
+    const typename BaseBuffer::Stream *stream() const override { return stream_.get(); }
+
+    BaseBuffer *source() { return source_.get(); }
+    const BaseBuffer *source() const { return source_.get(); }
+
+    StreamImpl *stream__() { return stream_.get(); }
+    const StreamImpl *stream__() const { return stream_.get(); }
+
 private:
     // note: stream_ should be closed before source_
     std::unique_ptr<BaseBuffer> source_; // may not be null
-    std::unique_ptr<Stream> stream_; // nullable
+    std::unique_ptr<StreamImpl> stream_; // nullable
 };
 
 }

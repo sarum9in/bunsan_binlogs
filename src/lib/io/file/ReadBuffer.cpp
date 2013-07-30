@@ -7,11 +7,6 @@ namespace binlogs {
 namespace io {
 namespace file {
 
-google::protobuf::io::ZeroCopyInputStream *ReadBuffer::istream()
-{
-    return stream();
-}
-
 std::unique_ptr<google::protobuf::io::FileInputStream> ReadBuffer::openFd(
     const boost::filesystem::path &path,
     int &errno_)

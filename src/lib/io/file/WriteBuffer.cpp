@@ -7,11 +7,6 @@ namespace binlogs {
 namespace io {
 namespace file {
 
-google::protobuf::io::ZeroCopyOutputStream *WriteBuffer::ostream()
-{
-    return stream();
-}
-
 std::unique_ptr<google::protobuf::io::FileOutputStream> WriteBuffer::openFd(
     const boost::filesystem::path &path,
     int &errno_)

@@ -11,9 +11,6 @@ namespace io {
 namespace file {
 
 class ReadBuffer: public BasicBuffer<io::ReadBuffer, google::protobuf::io::FileInputStream> {
-public:
-    google::protobuf::io::ZeroCopyInputStream *istream() override;
-
 protected:
     std::unique_ptr<google::protobuf::io::FileInputStream> openFd(
         const boost::filesystem::path &path,

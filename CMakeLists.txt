@@ -30,6 +30,8 @@ bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/v1/LogReader.cpp
 
     src/lib/io/BaseBuffer.cpp
+    src/lib/io/ReadBuffer.cpp
+    src/lib/io/WriteBuffer.cpp
     src/lib/io/file/ReadBuffer.cpp
     src/lib/io/file/WriteBuffer.cpp
     src/lib/io/file/open.cpp

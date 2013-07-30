@@ -11,9 +11,6 @@ namespace io {
 namespace file {
 
 class WriteBuffer: public BasicBuffer<io::WriteBuffer, google::protobuf::io::FileOutputStream> {
-public:
-    google::protobuf::io::ZeroCopyOutputStream *ostream() override;
-
 protected:
     std::unique_ptr<google::protobuf::io::FileOutputStream> openFd(
         const boost::filesystem::path &path,
