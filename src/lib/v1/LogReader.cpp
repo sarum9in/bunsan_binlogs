@@ -84,6 +84,8 @@ const MessageType *LogReader::nextMessageType(std::string *error)
 bool LogReader::read_(google::protobuf::Message &message, std::string *error)
 {
     if (input_) {
+        nextMessageType_ = boost::none;
+
         std::string error_;
         if (!error) {
             error = &error_;
@@ -95,17 +97,24 @@ bool LogReader::read_(google::protobuf::Message &message, std::string *error)
         }
 
         bool messageReadResult;
+        int bytesLeft = 0;
         {
             google::protobuf::io::CodedInputStream input(input_.get());
             const google::protobuf::io::CodedInputStream::Limit limit =
                 input.PushLimit(static_cast<int>(messageSize));
             messageReadResult = message.ParseFromCodedStream(&input);
+            bytesLeft = input.BytesUntilLimit();
             input.PopLimit(limit);
         }
-        if (!messageReadResult) {
-            // note: we ignore return value
-            // because Skip() may try to read past limit and it is IO error
-            (void) input_->Skip(messageSize);
+        if (messageReadResult) {
+            BOOST_ASSERT(bytesLeft == 0);
+        } else {
+            if (!input_->Skip(bytesLeft)) {
+                *error = "Unable to skip unread bytes.";
+                state_ = State::kBad;
+                input_ = nullptr;
+                return false;
+            }
             state_ = State::kFail;
             *error = "Unable to read message.";
             return false;
@@ -117,7 +126,6 @@ bool LogReader::read_(google::protobuf::Message &message, std::string *error)
             *error = str(boost::format("Corrupted message: unable to read %1% bytes.") % messageSize);
             return false;
         }
-        nextMessageType_ = boost::none;
         state_ = State::kOk;
         return true;
     } else {

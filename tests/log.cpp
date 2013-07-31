@@ -104,6 +104,11 @@ BOOST_AUTO_TEST_CASE(anonymous)
     readTestData(path);
 }
 
+BOOST_AUTO_TEST_CASE(readFail)
+{
+    // TODO test for State::kFail log reading
+}
+
 BOOST_FIXTURE_TEST_CASE(named, bunsan::testing::filesystem::tempfiles)
 {
     const boost::filesystem::path tmp1 = allocate(), tmp2 = allocate(), tmp3 = allocate();
