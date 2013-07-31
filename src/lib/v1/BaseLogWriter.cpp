@@ -45,6 +45,15 @@ BaseLogWriter::State BaseLogWriter::write(
     BOOST_ASSERT(output_);
     State state = State::kOk;
     google::protobuf::io::CodedOutputStream output(output_.get());
+    if (!message.IsInitialized()) {
+        state = State::kFail;
+        if (error) {
+            *error = str(boost::format("Unable to write incomplete message, "
+                                       "uninitialized fields: %1%.") %
+                message.InitializationErrorString());
+        }
+        return state;
+    }
     if (typeName) {
         const google::protobuf::uint32 messageType = messageTypePool__().typeId(*typeName);
         if (messageType == MessageTypePool::npos) {
