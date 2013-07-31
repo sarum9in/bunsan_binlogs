@@ -48,8 +48,9 @@ BaseLogWriter::State BaseLogWriter::write(
     if (!message.IsInitialized()) {
         state = State::kFail;
         if (error) {
-            *error = str(boost::format("Unable to write incomplete message, "
-                                       "uninitialized fields: [%1%].") %
+            *error = str(boost::format("Unable to write incomplete message of %1% type, "
+                                       "uninitialized fields: [%2%].") %
+                message.GetTypeName() %
                 message.InitializationErrorString());
         }
         return state;
