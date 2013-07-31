@@ -16,7 +16,7 @@ void ReadBuffer::BackUp(int count)
 
 bool ReadBuffer::Skip(int count)
 {
-    return Skip(count);
+    return stream()->Skip(count);
 }
 
 google::protobuf::int64 ReadBuffer::ByteCount() const
