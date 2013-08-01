@@ -42,21 +42,23 @@ bunsan_add_shared_library(${PROJECT_NAME}
 )
 bunsan_use(${PROJECT_NAME})
 
-bunsan_protobuf_generate_cpp(SOURCES tests_proto_srcs HEADERS proto_hdrs INSTALL include PROTOS
-    bunsan/binlogs/tests/Message1.proto
-    bunsan/binlogs/tests/Message2.proto
-)
-bunsan_add_shared_library(${PROJECT_NAME}_tests
-    ${tests_proto_srcs}
-
-    src/lib/tests/FileDescriptorSet.cpp
-)
-
 bunsan_add_executable(${PROJECT_NAME}_read
     src/bin/read.cpp
 )
 
 bunsan_install_headers()
 bunsan_install_targets(${PROJECT_NAME} ${PROJECT_NAME}_read)
+
+if(ENABLE_TESTS)
+    bunsan_protobuf_generate_cpp(SOURCES tests_proto_srcs HEADERS proto_hdrs INSTALL include PROTOS
+        bunsan/binlogs/tests/Message1.proto
+        bunsan/binlogs/tests/Message2.proto
+    )
+    bunsan_add_shared_library(${PROJECT_NAME}_tests
+        ${tests_proto_srcs}
+
+        src/lib/tests/FileDescriptorSet.cpp
+    )
+endif()
 
 bunsan_include_tests()
