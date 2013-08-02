@@ -16,7 +16,7 @@ Distribution:   Red Hat Enterprise Linux
 
 Requires:       boost >= 1.53.0
 BuildRequires:  boost-devel >= 1.53.0
-BuildRequires:  bunsan_cmake
+BuildRequires:  bunsan_cmake = %{version}-%{release}
 
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
