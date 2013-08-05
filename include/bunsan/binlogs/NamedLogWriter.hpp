@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bunsan/binlogs/LogWriter.hpp"
+#include <bunsan/binlogs/LogWriter.hpp>
 
 #include <boost/filesystem/path.hpp>
 

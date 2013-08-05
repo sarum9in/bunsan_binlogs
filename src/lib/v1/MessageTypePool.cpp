@@ -1,5 +1,5 @@
-#include "bunsan/binlogs/v1/MessageTypePool.hpp"
-#include "bunsan/binlogs/detail/make_unique.hpp"
+#include <bunsan/binlogs/v1/MessageTypePool.hpp>
+#include <bunsan/binlogs/detail/make_unique.hpp>
 
 #include <boost/assert.hpp>
 #include <boost/format.hpp>

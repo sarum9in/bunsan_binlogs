@@ -1,4 +1,4 @@
-#include "bunsan/binlogs/AbstractNamedLogWriter.hpp"
+#include <bunsan/binlogs/AbstractNamedLogWriter.hpp>
 
 #include <boost/assert.hpp>
 #include <boost/filesystem/operations.hpp>

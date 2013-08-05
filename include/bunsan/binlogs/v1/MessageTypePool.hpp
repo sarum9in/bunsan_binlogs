@@ -1,9 +1,9 @@
 #pragma once
 
-#include "bunsan/binlogs/v1/MessageType.hpp"
+#include <bunsan/binlogs/v1/MessageType.hpp>
 
-#include "bunsan/binlogs/Header.hpp"
-#include "bunsan/binlogs/MessageTypePool.hpp"
+#include <bunsan/binlogs/Header.hpp>
+#include <bunsan/binlogs/MessageTypePool.hpp>
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor_database.h>

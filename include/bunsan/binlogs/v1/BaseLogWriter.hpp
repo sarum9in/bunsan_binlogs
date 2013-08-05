@@ -1,10 +1,10 @@
 #pragma once
 
-#include "bunsan/binlogs/io/WriteBuffer.hpp"
-#include "bunsan/binlogs/v1/HeaderData.pb.h"
-#include "bunsan/binlogs/v1/MessageTypePool.hpp"
+#include <bunsan/binlogs/io/WriteBuffer.hpp>
+#include <bunsan/binlogs/v1/HeaderData.pb.h>
+#include <bunsan/binlogs/v1/MessageTypePool.hpp>
 
-#include "bunsan/binlogs/LogWriter.hpp"
+#include <bunsan/binlogs/LogWriter.hpp>
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream.h>

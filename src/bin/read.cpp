@@ -1,5 +1,5 @@
-#include "bunsan/binlogs/detail/make_unique.hpp"
-#include "bunsan/binlogs/LogFactory.hpp"
+#include <bunsan/binlogs/detail/make_unique.hpp>
+#include <bunsan/binlogs/LogFactory.hpp>
 
 #include <google/protobuf/descriptor.h>
 

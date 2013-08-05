@@ -1,5 +1,5 @@
-#include "bunsan/binlogs/v1/BaseLogWriter.hpp"
-#include "bunsan/binlogs/detail/make_unique.hpp"
+#include <bunsan/binlogs/v1/BaseLogWriter.hpp>
+#include <bunsan/binlogs/detail/make_unique.hpp>
 
 #include <google/protobuf/io/coded_stream.h>
 

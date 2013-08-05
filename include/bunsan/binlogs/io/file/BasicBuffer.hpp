@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bunsan/binlogs/io/WriteBuffer.hpp"
+#include <bunsan/binlogs/io/WriteBuffer.hpp>
 
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
