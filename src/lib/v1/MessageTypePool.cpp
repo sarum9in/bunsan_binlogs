@@ -16,7 +16,9 @@ MessageTypePool::MessageTypePool():
 
 bool MessageTypePool::Init(const Header &header, std::string *error)
 {
-    for (const google::protobuf::FileDescriptorProto &proto: header.proto.file()) {
+    header_ = header;
+
+    for (const google::protobuf::FileDescriptorProto &proto: header_.proto.file()) {
         if (!db_.Add(proto)) {
             if (error) {
                 *error = "File already in db.";
@@ -25,9 +27,9 @@ bool MessageTypePool::Init(const Header &header, std::string *error)
         }
     }
 
-    messageTypes_.resize(header.types.size());
-    for (std::size_t i = 0; i < header.types.size(); ++i) {
-        const std::string &type = header.types[i];
+    messageTypes_.resize(header_.types.size());
+    for (std::size_t i = 0; i < header_.types.size(); ++i) {
+        const std::string &type = header_.types[i];
         std::unique_ptr<MessageType> &messageType = messageTypes_[i];
 
         const google::protobuf::Descriptor *const descriptor =
