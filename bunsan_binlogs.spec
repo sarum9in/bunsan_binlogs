@@ -28,6 +28,7 @@ Package also provides program for reading such logs.
 
 %package        devel
 Summary:        bunsan_binlogs development files
+Group:          System Environment/Libraries
 Requires:       %{name} = %{version}-%{release}
 
 
