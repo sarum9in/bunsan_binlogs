@@ -15,8 +15,10 @@ Packager:   Aleksey Filippov <sarum9in@yandex-team.ru>
 Distribution:   Red Hat Enterprise Linux
 
 Requires:       boost >= 1.53.0
+Requires:       protobuf-6
 BuildRequires:  boost-devel >= 1.53.0
 BuildRequires:  bunsan_cmake = %{version}-%{release}
+BuildRequires:  protobuf-6-devel
 
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
