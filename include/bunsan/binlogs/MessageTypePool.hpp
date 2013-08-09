@@ -1,7 +1,7 @@
 #pragma once
 
-#include "bunsan/binlogs/Header.hpp"
-#include "bunsan/binlogs/MessageType.hpp"
+#include <bunsan/binlogs/Header.hpp>
+#include <bunsan/binlogs/MessageType.hpp>
 
 #include <boost/range/any_range.hpp>
 

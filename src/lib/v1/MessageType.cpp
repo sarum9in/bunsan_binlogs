@@ -1,4 +1,4 @@
-#include "bunsan/binlogs/v1/MessageType.hpp"
+#include <bunsan/binlogs/v1/MessageType.hpp>
 
 #include <boost/assert.hpp>
 

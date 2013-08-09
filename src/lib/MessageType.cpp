@@ -1,4 +1,4 @@
-#include "bunsan/binlogs/MessageType.hpp"
+#include <bunsan/binlogs/MessageType.hpp>
 
 namespace bunsan {
 namespace binlogs {
