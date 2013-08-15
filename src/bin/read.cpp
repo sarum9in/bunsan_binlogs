@@ -1,16 +1,10 @@
-#include <bunsan/binlogs/detail/make_unique.hpp>
 #include <bunsan/binlogs/LogFactory.hpp>
 
 #include <google/protobuf/descriptor.h>
 
-#include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/path.hpp>
 
-#include <fstream>
 #include <iostream>
-
-#include <cerrno>
-#include <cstdio>
 
 using namespace bunsan::binlogs;
 
