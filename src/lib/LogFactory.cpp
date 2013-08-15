@@ -92,8 +92,17 @@ std::unique_ptr<LogReader> openReadOnly(
     std::string *error)
 {
     auto input = openFileReadOnly(path, error);
-    if (!input) return nullptr;
-    return openReadOnly(std::move(input), error);
+    if (!input) {
+        if (error) {
+            *error = str(boost::format("%1%: %2%") % path % *error);
+        }
+        return nullptr;
+    }
+    auto logReader = openReadOnly(std::move(input), error);
+    if (!logReader && error) {
+        *error = str(boost::format("%1%: %2%") % path % *error);
+    }
+    return logReader;
 }
 
 std::unique_ptr<LogWriter> openWriteOnly(
