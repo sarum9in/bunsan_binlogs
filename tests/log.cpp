@@ -60,14 +60,8 @@ void readTestData(LogReader *logReader)
     tests::Message1 msg1;
     tests::Message2 msg2;
 
-    const Header &actualHeader = logReader->messageTypePool().header();
-    const Header &expectedHeader = getHeader();
-    // TODO
-    /*BOOST_CHECK_EQUAL_COLLECTIONS(actualHeader.proto.file().begin(), actualHeader.proto.file().end(),
-                                  expectedHeader.proto.file().begin(), expectedHeader.proto.file().end());*/
-    BOOST_CHECK_EQUAL_COLLECTIONS(actualHeader.types.begin(), actualHeader.types.end(),
-                                  expectedHeader.types.begin(), expectedHeader.types.end());
-
+    // TODO implement operator<<() and use BOOST_CHECK_EQUAL()
+    BOOST_CHECK(logReader->messageTypePool().header() == getHeader());
     const MessageType *next = logReader->nextMessageType(&error);
     BOOST_REQUIRE_MESSAGE(next, error);
     BOOST_REQUIRE_EQUAL(next->typeName(), "bunsan.binlogs.tests.Message1");
