@@ -3,6 +3,7 @@
 #include <bunsan/binlogs/Header.hpp>
 #include <bunsan/binlogs/MessageType.hpp>
 
+#include <boost/noncopyable.hpp>
 #include <boost/range/any_range.hpp>
 
 #include <string>
@@ -10,7 +11,7 @@
 namespace bunsan {
 namespace binlogs {
 
-class MessageTypePool {
+class MessageTypePool: private boost::noncopyable {
 public:
     typedef boost::any_range<const MessageType *,
                              boost::forward_traversal_tag,
