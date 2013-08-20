@@ -2,6 +2,7 @@
 
 #include <bunsan/binlogs/io/file/open.hpp>
 #include <bunsan/binlogs/io/filter/gzip.hpp>
+#include <bunsan/binlogs/v1/format.hpp>
 #include <bunsan/binlogs/v1/LogReader.hpp>
 #include <bunsan/binlogs/v1/LogWriter.hpp>
 #include <bunsan/binlogs/v1/NamedLogWriter.hpp>
@@ -12,21 +13,17 @@
 
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
-#include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <boost/uuid/string_generator.hpp>
 
 namespace bunsan {
 namespace binlogs {
 
 namespace {
 
-const boost::uuids::uuid MAGIC_FORMAT_V1 = boost::uuids::string_generator()("f6a03dc0-eaf5-11e2-91e2-0800200c9a66");
-
 bool writeMagic(io::WriteBuffer &output, std::string *error)
 {
     google::protobuf::io::CodedOutputStream outp(&output);
-    outp.WriteRaw(&MAGIC_FORMAT_V1, static_cast<int>(MAGIC_FORMAT_V1.size()));
+    outp.WriteRaw(&v1::MAGIC_FORMAT, static_cast<int>(v1::MAGIC_FORMAT.size()));
     if (outp.HadError()) {
         if (error) {
             *error = "Unable to write format magic.";
@@ -74,7 +71,7 @@ std::unique_ptr<LogReader> openReadOnly(
     }
 
     std::unique_ptr<LogReader> logReader;
-    if (format == MAGIC_FORMAT_V1) {
+    if (format == v1::MAGIC_FORMAT) {
         logReader = detail::make_unique<v1::LogReader>(std::move(input));
     } else {
         if (error) {
