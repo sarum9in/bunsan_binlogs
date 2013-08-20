@@ -18,12 +18,14 @@
 namespace bunsan {
 namespace binlogs {
 
+namespace current = v1;
+
 namespace {
 
 bool writeMagic(io::WriteBuffer &output, std::string *error)
 {
     google::protobuf::io::CodedOutputStream outp(&output);
-    outp.WriteRaw(&v1::MAGIC_FORMAT, static_cast<int>(v1::MAGIC_FORMAT.size()));
+    outp.WriteRaw(&current::MAGIC_FORMAT, static_cast<int>(current::MAGIC_FORMAT.size()));
     if (outp.HadError()) {
         if (error) {
             *error = "Unable to write format magic.";
@@ -111,7 +113,7 @@ std::unique_ptr<LogWriter> openWriteOnly(
     if (!writeMagic(*output, error)) {
         return nullptr;
     }
-    std::unique_ptr<LogWriter> logWriter = detail::make_unique<v1::LogWriter>(std::move(output));
+    std::unique_ptr<LogWriter> logWriter = detail::make_unique<current::LogWriter>(std::move(output));
     if (!logWriter->Init(header, error)) {
         logWriter.reset();
     }
@@ -124,7 +126,7 @@ std::unique_ptr<NamedLogWriter> openWriteOnly(
     std::string *error)
 {
     std::unique_ptr<NamedLogWriter> logWriter =
-        detail::make_unique<v1::NamedLogWriter>(openFileWriteOnly);
+        detail::make_unique<current::NamedLogWriter>(openFileWriteOnly);
     if (!logWriter->Init(header, error)) {
         return nullptr;
     }
