@@ -1,5 +1,6 @@
 #include <bunsan/binlogs/LogFactory.hpp>
 
+#include <bunsan/binlogs/detail/format.hpp>
 #include <bunsan/binlogs/io/file/open.hpp>
 #include <bunsan/binlogs/io/filter/gzip.hpp>
 #include <bunsan/binlogs/v1/format.hpp>
@@ -8,8 +9,6 @@
 #include <bunsan/binlogs/v1/NamedLogWriter.hpp>
 
 #include <bunsan/binlogs/detail/make_unique.hpp>
-
-#include <google/protobuf/io/coded_stream.h>
 
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
@@ -24,15 +23,7 @@ namespace {
 
 bool writeMagic(io::WriteBuffer &output, std::string *error)
 {
-    google::protobuf::io::CodedOutputStream outp(&output);
-    outp.WriteRaw(&current::MAGIC_FORMAT, static_cast<int>(current::MAGIC_FORMAT.size()));
-    if (outp.HadError()) {
-        if (error) {
-            *error = "Unable to write format magic.";
-        }
-        return false;
-    }
-    return true;
+    return detail::writeFormatMagic(output, current::MAGIC_FORMAT, error);
 }
 
 std::unique_ptr<io::ReadBuffer> openFileReadOnly(const boost::filesystem::path &path, std::string *error)
@@ -62,14 +53,8 @@ std::unique_ptr<LogReader> openReadOnly(
 {
     BOOST_ASSERT(input);
     boost::uuids::uuid format;
-    {
-        google::protobuf::io::CodedInputStream inp(input.get());
-        if (!inp.ReadRaw(&format, static_cast<int>(format.size()))) {
-            if (error) {
-                *error = "Unable to read format magic.";
-            }
-            return nullptr;
-        }
+    if (!detail::readFormatMagic(*input, format, error)) {
+        return nullptr;
     }
 
     std::unique_ptr<LogReader> logReader;
