@@ -20,6 +20,10 @@ std::unique_ptr<io::WriteBuffer> openWriteOnly(
     const boost::filesystem::path &path,
     std::string *error=nullptr);
 
+std::unique_ptr<io::WriteBuffer> openAppendOnly(
+    const boost::filesystem::path &path,
+    std::string *error=nullptr);
+
 }
 }
 }

@@ -19,6 +19,31 @@ BOOST_AUTO_TEST_SUITE(io_)
 
 BOOST_FIXTURE_TEST_SUITE(file_, bunsan::testing::filesystem::tempfile)
 
+BOOST_AUTO_TEST_CASE(openAppend)
+{
+    const std::string PREFIX_DATA = "Hello, ";
+    const std::string POSTFIX_DATA = "world!";
+    bunsan::testing::filesystem::write_data(path, PREFIX_DATA);
+    std::string error;
+    std::unique_ptr<io::WriteBuffer> buffer = io::file::openAppendOnly(path, &error);
+    BOOST_REQUIRE_MESSAGE(buffer, error);
+    {
+        google::protobuf::io::CodedOutputStream os(buffer.get());
+        os.WriteString(POSTFIX_DATA);
+        BOOST_REQUIRE(!os.HadError());
+    }
+    BOOST_REQUIRE(buffer->close());
+    BOOST_CHECK(!buffer->error());
+    BOOST_CHECK_EQUAL(bunsan::testing::filesystem::read_data(path), PREFIX_DATA + POSTFIX_DATA);
+}
+
+BOOST_AUTO_TEST_CASE(openAppendError)
+{
+    std::string error;
+    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly("/path/that/does/not/exist", &error);
+    BOOST_CHECK_MESSAGE(!buffer, error);
+}
+
 BOOST_AUTO_TEST_CASE(openRead)
 {
     const std::string SOME_DATA = "Hello, world!";
@@ -172,6 +197,25 @@ BOOST_AUTO_TEST_CASE(openWrite)
     BOOST_CHECK(!buffer->error());
     checkIsGzip(path);
     BOOST_CHECK_EQUAL(readGzip(path), SOME_DATA);
+}
+
+BOOST_AUTO_TEST_CASE(gzipAppend)
+{
+    const std::string PREFIX_DATA = "Hello, ";
+    const std::string POSTFIX_DATA = "world!";
+    writeGzip(path, PREFIX_DATA);
+    std::string error;
+    std::unique_ptr<io::WriteBuffer> buffer = io::filter::gzip::open(io::file::openAppendOnly(path, &error));
+    BOOST_REQUIRE_MESSAGE(buffer, error);
+    {
+        google::protobuf::io::CodedOutputStream os(buffer.get());
+        os.WriteString(POSTFIX_DATA);
+        BOOST_REQUIRE(!os.HadError());
+    }
+    BOOST_REQUIRE(buffer->close());
+    BOOST_CHECK(!buffer->error());
+    checkIsGzip(path);
+    BOOST_CHECK_EQUAL(readGzip(path), PREFIX_DATA + POSTFIX_DATA);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // gzip_

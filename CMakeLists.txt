@@ -39,6 +39,7 @@ bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/io/BaseBuffer.cpp
     src/lib/io/ReadBuffer.cpp
     src/lib/io/WriteBuffer.cpp
+    src/lib/io/file/AppendBuffer.cpp
     src/lib/io/file/ReadBuffer.cpp
     src/lib/io/file/WriteBuffer.cpp
     src/lib/io/file/open.cpp
