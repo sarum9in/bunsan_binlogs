@@ -24,6 +24,10 @@ public:
 
     MessageTypePool();
 
+    /*!
+     * \note It is guaranteed that type mappings
+     * generated for equal headers are equal.
+     */
     bool Init(const Header &header, std::string *error=nullptr);
 
     Header header() const override;
