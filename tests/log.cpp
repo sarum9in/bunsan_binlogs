@@ -46,7 +46,7 @@ void writeTestData(LogWriter *logWriter)
     msg1.set_value("value1");
     if (!logWriter->write(msg1, &error)) BOOST_FAIL(error);
 
-    msg1.Clear();
+    msg2.Clear();
     msg2.set_key("key2");
     msg2.add_values("value21");
     msg2.add_values("value22");
