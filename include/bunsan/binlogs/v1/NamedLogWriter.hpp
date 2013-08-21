@@ -18,7 +18,7 @@ class NamedLogWriter:
 public:
     typedef std::function<
         std::unique_ptr<io::WriteBuffer> (
-            const boost::filesystem::path &, std::string *)> FileOpener;
+            const boost::filesystem::path &, bool /*append*/, std::string *)> FileOpener;
 
 public:
     explicit NamedLogWriter(const FileOpener &openFile);
@@ -37,6 +37,8 @@ public:
 
     bool open(const boost::filesystem::path &path, std::string *error=nullptr) override;
 
+    bool append(const boost::filesystem::path &path, std::string *error=nullptr) override;
+
     bool reopen(std::string *error=nullptr) override;
 
     bool reopen(const boost::filesystem::path &newPath, std::string *error=nullptr) override;
@@ -47,6 +49,9 @@ protected:
     const v1::MessageTypePool &messageTypePool__() const override;
 
     using BaseLogWriter::write;
+
+private:
+    bool open_(const boost::filesystem::path &path, const bool append, std::string *error);
 
 private:
     FileOpener openFile_;

@@ -62,42 +62,50 @@ const MessageType *LogReader::nextMessageType(std::string *error)
         BOOST_ASSERT(header_);
         if (!nextMessageType_) {
             google::protobuf::uint32 typeId;
-            if (!read_(typeId, "type", error)) {
-                state_ = State::kBad;
-                input_ = nullptr;
-                return nullptr;
-            }
-            if (typeId == std::numeric_limits<google::protobuf::uint32>::max()) {
-                bool ret;
-                boost::uuids::uuid end;
-                {
-                    google::protobuf::io::CodedInputStream input(input_.get());
-                    ret = input.ReadRaw(&end, end.size());
-                }
-                if (!ret) {
+            do {
+                if (!read_(typeId, "type", error)) {
                     state_ = State::kBad;
                     input_ = nullptr;
-                    if (error) {
-                        BOOST_VERIFY(input_->error(error));
-                        *error = str(boost::format("Unable to read footer: %1%") % *error);
-                    }
                     return nullptr;
                 }
-                if (end != MAGIC_FOOTER) {
-                    state_ = State::kBad;
-                    input_ = nullptr;
-                    if (error) {
-                        *error = "Invalid footer.";
+                if (typeId == std::numeric_limits<google::protobuf::uint32>::max()) {
+                    bool retFooter, retContinue;
+                    boost::uuids::uuid footer, continue_;
+                    {
+                        google::protobuf::io::CodedInputStream input(input_.get());
+                        retFooter = input.ReadRaw(&footer, footer.size());
+                        retContinue = input.ReadRaw(&continue_, continue_.size());
                     }
-                    return nullptr;
+                    if (!retFooter) {
+                        state_ = State::kBad;
+                        if (error) {
+                            if (input_->error(error)) {
+                                *error = str(boost::format("Unable to read footer: %1%") % *error);
+                            } else {
+                                *error = "Unable to read footer.";
+                            }
+                        }
+                        input_ = nullptr;
+                        return nullptr;
+                    }
+                    if (footer != MAGIC_FOOTER) {
+                        state_ = State::kBad;
+                        input_ = nullptr;
+                        if (error) {
+                            *error = "Invalid footer.";
+                        }
+                        return nullptr;
+                    }
+                    if (!retContinue || continue_ != MAGIC_CONTINUE) {
+                        state_ = State::kEof;
+                        input_ = nullptr;
+                        if (error) {
+                            *error = "End of file.";
+                        }
+                        return nullptr;
+                    }
                 }
-                state_ = State::kEof;
-                input_ = nullptr;
-                if (error) {
-                    *error = "End of file.";
-                }
-                return nullptr;
-            }
+            } while (typeId == std::numeric_limits<google::protobuf::uint32>::max());
             nextMessageType_ = pool_.type(typeId);
             if (!*nextMessageType_) {
                 state_ = State::kBad;

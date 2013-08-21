@@ -27,6 +27,7 @@ protected:
 
     bool writeHeader(std::string *error=nullptr);
     bool writeFooter(std::string *error=nullptr);
+    bool writeContinue(std::string *error=nullptr);
 
     State write(const std::string *const typeName,
                 const google::protobuf::Message &message,

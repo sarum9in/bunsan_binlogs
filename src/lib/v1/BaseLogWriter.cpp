@@ -54,6 +54,17 @@ bool BaseLogWriter::writeFooter(std::string *error)
     return true;
 }
 
+bool BaseLogWriter::writeContinue(std::string *error)
+{
+    BOOST_ASSERT(output_);
+    google::protobuf::io::CodedOutputStream output(output_.get());
+    output.WriteRaw(&MAGIC_CONTINUE, MAGIC_CONTINUE.size());
+    if (hadError(output, "Unable to write continue magic.", nullptr, error)) {
+        return false;
+    }
+    return true;
+}
+
 const binlogs::MessageTypePool &BaseLogWriter::messageTypePool() const
 {
     return messageTypePool__();

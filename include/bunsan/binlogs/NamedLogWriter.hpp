@@ -13,6 +13,9 @@ public:
 
     virtual bool open(const boost::filesystem::path &path, std::string *error=nullptr)=0;
 
+    /// Append to already created log file. It must have the same format.
+    virtual bool append(const boost::filesystem::path &path, std::string *error=nullptr)=0;
+
     /// reopen(path())
     virtual bool reopen(std::string *error=nullptr)=0;
 

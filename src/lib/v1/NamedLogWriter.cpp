@@ -1,9 +1,15 @@
 #include <bunsan/binlogs/v1/NamedLogWriter.hpp>
+
+#include <bunsan/binlogs/detail/files.hpp>
+#include <bunsan/binlogs/detail/format.hpp>
 #include <bunsan/binlogs/detail/make_unique.hpp>
 #include <bunsan/binlogs/io/file/open.hpp>
 #include <bunsan/binlogs/io/filter/gzip.hpp>
+#include <bunsan/binlogs/v1/format.hpp>
+#include <bunsan/binlogs/v1/LogReader.hpp>
 
 #include <boost/filesystem/operations.hpp>
+#include <boost/format.hpp>
 
 namespace bunsan {
 namespace binlogs {
@@ -67,7 +73,10 @@ boost::filesystem::path NamedLogWriter::path() const
     return path_;
 }
 
-bool NamedLogWriter::open(const boost::filesystem::path &path, std::string *error)
+bool NamedLogWriter::open_(
+    const boost::filesystem::path &path,
+    const bool append,
+    std::string *error)
 {
     if (hasOutput()) {
         if (error) {
@@ -76,23 +85,76 @@ bool NamedLogWriter::open(const boost::filesystem::path &path, std::string *erro
         return false;
     }
     path_ = path;
-    auto output = openFile_(path_, error);
+    if (append) {
+        auto input = detail::openFileReadOnly(path_, error);
+        if (!input) {
+            state_ = State::kBad;
+            return false;
+        }
+        boost::uuids::uuid format;
+        if (!detail::readFormatMagic(*input, format, error)) {
+            state_ = State::kBad;
+            return false;
+        }
+        if (format != MAGIC_FORMAT) {
+            state_ = State::kBad;
+            if (error) {
+                *error = str(boost::format(
+                    "File %1% does not have \"%2%\" format.") % NAME);
+            }
+            return false;
+        }
+        auto logReader = detail::make_unique<LogReader>(std::move(input));
+        if (!logReader->Init(error)) {
+            state_ = State::kBad;
+            if (error) {
+                *error = str(boost::format(
+                    "Unable to open %1% file: %2%") % *error);
+            }
+            return false;
+        }
+        if (logReader->messageTypePool().header() != pool_.header()) {
+            state_ = State::kBad;
+            if (error) {
+                *error = str(boost::format(
+                    "%1%: Incompatible header.") % path_);
+            }
+            return false;
+        }
+        // TODO check log file
+    }
+    auto output = openFile_(path_, append, error);
     if (!output) {
         return false;
     }
     setOutput(std::move(output));
-    state_ = write(nullptr, *headerData_, error);
-    if (state_ != State::kOk) {
-        state_ = State::kBad;
-        closeOutput();
-        if (error) {
-            *error = "Unable to write header: " + *error;
+    if (append) {
+        if (!writeContinue(error)) {
+            return false;
         }
-        return false;
+    } else {
+        state_ = write(nullptr, *headerData_, error);
+        if (state_ != State::kOk) {
+            state_ = State::kBad;
+            closeOutput();
+            if (error) {
+                *error = "Unable to write header: " + *error;
+            }
+            return false;
+        }
     }
     return true;
 }
 
+bool NamedLogWriter::open(const boost::filesystem::path &path, std::string *error)
+{
+    return open_(path, false, error);
+}
+
+bool NamedLogWriter::append(const boost::filesystem::path &path, std::string *error)
+{
+    return open_(path, true, error);
+}
 
 bool NamedLogWriter::reopen(std::string *error)
 {

@@ -147,4 +147,49 @@ BOOST_FIXTURE_TEST_CASE(named, bunsan::testing::filesystem::tempfiles)
     readTestData(tmp3);
 }
 
+struct AppendFixture: bunsan::testing::filesystem::tempfile {
+    std::string error;
+    std::unique_ptr<NamedLogWriter> namedLogWriter = newWriter(getHeader());
+};
+
+BOOST_FIXTURE_TEST_SUITE(append, AppendFixture)
+
+BOOST_AUTO_TEST_CASE(internal)
+{
+    if (!namedLogWriter->open(path, &error)) BOOST_FAIL(error);
+    writeTestData1(namedLogWriter.get());
+    if (!namedLogWriter->close(&error)) BOOST_FAIL(error);
+    if (!namedLogWriter->append(path, &error)) BOOST_FAIL(error);
+    writeTestData2(namedLogWriter.get());
+    if (!namedLogWriter->close(&error)) BOOST_FAIL(error);
+    readTestData(path);
+}
+
+BOOST_AUTO_TEST_CASE(external)
+{
+    if (!namedLogWriter->open(path, &error)) BOOST_FAIL(error);
+    writeTestData1(namedLogWriter.get());
+    if (!namedLogWriter->close(&error)) BOOST_FAIL(error);
+    namedLogWriter = openAppendOnly(path, getHeader(), &error);
+    BOOST_REQUIRE_MESSAGE(namedLogWriter, error);
+    writeTestData2(namedLogWriter.get());
+    if (!namedLogWriter->close(&error)) BOOST_FAIL(error);
+    readTestData(path);
+}
+
+BOOST_AUTO_TEST_CASE(incompatibleHeader)
+{
+    if (!namedLogWriter->open(path, &error)) BOOST_FAIL(error);
+    writeTestData1(namedLogWriter.get());
+    if (!namedLogWriter->close(&error)) BOOST_FAIL(error);
+    Header header = getHeader();
+    BOOST_REQUIRE_GE(header.types.size(), 2);
+    swap(header.types[0], header.types[1]); // shuffle
+    BOOST_REQUIRE(header != getHeader()); // TODO implement Header's operator<<() and use NE
+    namedLogWriter = openAppendOnly(path, header, &error);
+    BOOST_CHECK_MESSAGE(!namedLogWriter, error);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // append
+
 BOOST_AUTO_TEST_SUITE_END() // log_

@@ -26,12 +26,19 @@ bool writeMagic(io::WriteBuffer &output, std::string *error)
 
 std::unique_ptr<io::WriteBuffer> openFileWriteOnly(
     const boost::filesystem::path &path,
+    const bool append,
     std::string *error)
 {
-    std::unique_ptr<io::WriteBuffer> buffer =
-        detail::openFileWriteOnly(path, error);
+    std::unique_ptr<io::WriteBuffer> buffer;
+    if (append) {
+        buffer = detail::openFileAppendOnly(path, error);
+    } else {
+        buffer = detail::openFileWriteOnly(path, error);
+    }
     if (!buffer) return nullptr;
-    if (!writeMagic(*buffer, error)) return nullptr;
+    if (!append) {
+        if (!writeMagic(*buffer, error)) return nullptr;
+    }
     return buffer;
 }
 
@@ -96,8 +103,7 @@ std::unique_ptr<LogWriter> openWriteOnly(
     return logWriter;
 }
 
-std::unique_ptr<NamedLogWriter> openWriteOnly(
-    const boost::filesystem::path &path,
+std::unique_ptr<NamedLogWriter> newWriter(
     const Header &header,
     std::string *error)
 {
@@ -106,7 +112,34 @@ std::unique_ptr<NamedLogWriter> openWriteOnly(
     if (!logWriter->Init(header, error)) {
         return nullptr;
     }
+    return logWriter;
+}
+
+std::unique_ptr<NamedLogWriter> openWriteOnly(
+    const boost::filesystem::path &path,
+    const Header &header,
+    std::string *error)
+{
+    std::unique_ptr<NamedLogWriter> logWriter = newWriter(header, error);
+    if (!logWriter) {
+        return nullptr;
+    }
     if (!logWriter->open(path, error)) {
+        return nullptr;
+    }
+    return logWriter;
+}
+
+std::unique_ptr<NamedLogWriter> openAppendOnly(
+    const boost::filesystem::path &path,
+    const Header &header,
+    std::string *error)
+{
+    std::unique_ptr<NamedLogWriter> logWriter = newWriter(header, error);
+    if (!logWriter) {
+        return nullptr;
+    }
+    if (!logWriter->append(path, error)) {
         return nullptr;
     }
     return logWriter;

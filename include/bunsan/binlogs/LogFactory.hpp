@@ -30,7 +30,18 @@ std::unique_ptr<LogWriter> openWriteOnly(
     std::string *error=nullptr);
 
 /// \note calls Init()
+std::unique_ptr<NamedLogWriter> newWriter(
+    const Header &header,
+    std::string *error=nullptr);
+
+/// \note calls Init()
 std::unique_ptr<NamedLogWriter> openWriteOnly(
+    const boost::filesystem::path &path,
+    const Header &header,
+    std::string *error=nullptr);
+
+/// \note calls Init()
+std::unique_ptr<NamedLogWriter> openAppendOnly(
     const boost::filesystem::path &path,
     const Header &header,
     std::string *error=nullptr);
