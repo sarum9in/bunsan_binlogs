@@ -1,14 +1,13 @@
 #include <bunsan/binlogs/LogFactory.hpp>
 
 #include <bunsan/binlogs/detail/format.hpp>
+#include <bunsan/binlogs/detail/make_unique.hpp>
 #include <bunsan/binlogs/io/file/open.hpp>
 #include <bunsan/binlogs/io/filter/gzip.hpp>
 #include <bunsan/binlogs/v1/format.hpp>
 #include <bunsan/binlogs/v1/LogReader.hpp>
 #include <bunsan/binlogs/v1/LogWriter.hpp>
 #include <bunsan/binlogs/v1/NamedLogWriter.hpp>
-
-#include <bunsan/binlogs/detail/make_unique.hpp>
 
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
