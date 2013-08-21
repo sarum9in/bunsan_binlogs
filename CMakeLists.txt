@@ -25,6 +25,7 @@ bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/LogFactory.cpp
 
     src/lib/detail/equals.cpp
+    src/lib/detail/files.cpp
     src/lib/detail/format.cpp
 
     src/lib/v1/format.cpp

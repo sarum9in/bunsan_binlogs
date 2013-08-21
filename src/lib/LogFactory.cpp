@@ -1,9 +1,8 @@
 #include <bunsan/binlogs/LogFactory.hpp>
 
+#include <bunsan/binlogs/detail/files.hpp>
 #include <bunsan/binlogs/detail/format.hpp>
 #include <bunsan/binlogs/detail/make_unique.hpp>
-#include <bunsan/binlogs/io/file/open.hpp>
-#include <bunsan/binlogs/io/filter/gzip.hpp>
 #include <bunsan/binlogs/v1/format.hpp>
 #include <bunsan/binlogs/v1/LogReader.hpp>
 #include <bunsan/binlogs/v1/LogWriter.hpp>
@@ -25,22 +24,14 @@ bool writeMagic(io::WriteBuffer &output, std::string *error)
     return detail::writeFormatMagic(output, current::MAGIC_FORMAT, error);
 }
 
-std::unique_ptr<io::ReadBuffer> openFileReadOnly(const boost::filesystem::path &path, std::string *error)
+std::unique_ptr<io::WriteBuffer> openFileWriteOnly(
+    const boost::filesystem::path &path,
+    std::string *error)
 {
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path, error);
-    if (!buffer) return buffer;
-    buffer = io::filter::gzip::open(std::move(buffer), error);
-    return buffer;
-}
-
-std::unique_ptr<io::WriteBuffer> openFileWriteOnly(const boost::filesystem::path &path, std::string *error)
-{
-    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(path, error);
-    if (!buffer) return buffer;
-    buffer = io::filter::gzip::open(std::move(buffer), error);
-    if (!writeMagic(*buffer, error)) {
-        buffer.reset();
-    }
+    std::unique_ptr<io::WriteBuffer> buffer =
+        detail::openFileWriteOnly(path, error);
+    if (!buffer) return nullptr;
+    if (!writeMagic(*buffer, error)) return nullptr;
     return buffer;
 }
 
@@ -74,7 +65,7 @@ std::unique_ptr<LogReader> openReadOnly(
     const boost::filesystem::path &path,
     std::string *error)
 {
-    auto input = openFileReadOnly(path, error);
+    auto input = detail::openFileReadOnly(path, error);
     if (!input) {
         if (error) {
             *error = str(boost::format("%1%: %2%") % path % *error);
@@ -97,7 +88,8 @@ std::unique_ptr<LogWriter> openWriteOnly(
     if (!writeMagic(*output, error)) {
         return nullptr;
     }
-    std::unique_ptr<LogWriter> logWriter = detail::make_unique<current::LogWriter>(std::move(output));
+    std::unique_ptr<LogWriter> logWriter =
+        detail::make_unique<current::LogWriter>(std::move(output));
     if (!logWriter->Init(header, error)) {
         logWriter.reset();
     }
