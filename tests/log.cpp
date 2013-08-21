@@ -35,23 +35,31 @@ std::unique_ptr<LogReader> openLogReader(const boost::filesystem::path &path)
     return logReader;
 }
 
-void writeTestData(LogWriter *logWriter)
+void writeTestData1(LogWriter *logWriter)
 {
     std::string error;
     tests::Message1 msg1;
-    tests::Message2 msg2;
-
     msg1.Clear();
     msg1.set_key("key1");
     msg1.set_value("value1");
     if (!logWriter->write(msg1, &error)) BOOST_FAIL(error);
+}
 
-    msg2.Clear();
+void writeTestData2(LogWriter *logWriter)
+{
+    std::string error;
+    tests::Message2 msg2;
     msg2.set_key("key2");
     msg2.add_values("value21");
     msg2.add_values("value22");
     msg2.add_values("value23");
     if (!logWriter->write(msg2, &error)) BOOST_FAIL(error);
+}
+
+void writeTestData(LogWriter *logWriter)
+{
+    writeTestData1(logWriter);
+    writeTestData2(logWriter);
 }
 
 void readTestData(LogReader *logReader)
