@@ -59,7 +59,6 @@ const MessageType *LogReader::nextMessageType(std::string *error)
         if (!nextMessageType_) {
             google::protobuf::uint32 typeId;
             if (!read_(typeId, "type", error)) {
-                state_ = State::kEof; // TODO check underlying stream
                 return nullptr;
             }
             nextMessageType_ = pool_.type(typeId);
@@ -93,6 +92,7 @@ bool LogReader::read_(google::protobuf::Message &message, std::string *error)
 
         google::protobuf::uint32 messageSize;
         if (!read_(messageSize, "size", error)) {
+            state_ = State::kBad;
             return false;
         }
 
@@ -137,10 +137,15 @@ bool LogReader::read_(google::protobuf::uint32 &uint32, const std::string &field
 {
     google::protobuf::io::CodedInputStream input(input_.get());
     if (!input.ReadLittleEndian32(&uint32)) {
-        state_ = State::kBad;
+        if (input_->error(error)) {
+            state_ = State::kBad;
+        } else {
+            state_ = State::kEof;
+        }
         input_ = nullptr;
         if (error) {
-            *error = str(boost::format("Unable to read message %1%.") % field);
+            *error = str(boost::format(
+                "Unable to read message %1%: %2%.") % field % *error);
         }
         return false;
     }
