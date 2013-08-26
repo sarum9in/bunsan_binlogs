@@ -125,7 +125,7 @@ const MessageType *LogReader::nextMessageType(std::string *error)
     }
 }
 
-bool LogReader::read_(google::protobuf::Message &message, std::string *error)
+bool LogReader::read_(google::protobuf::Message *message, std::string *error)
 {
     if (input_) {
         nextMessageType_ = boost::none;
@@ -141,40 +141,54 @@ bool LogReader::read_(google::protobuf::Message &message, std::string *error)
             return false;
         }
 
-        bool messageReadResult;
-        int bytesLeft = 0;
-        {
-            google::protobuf::io::CodedInputStream input(input_.get());
-            const google::protobuf::io::CodedInputStream::Limit limit =
-                input.PushLimit(static_cast<int>(messageSize));
-            messageReadResult = message.ParseFromCodedStream(&input);
-            bytesLeft = input.BytesUntilLimit();
-            BOOST_ASSERT(bytesLeft >= 0);
-            input.PopLimit(limit);
-        }
-        if (!messageReadResult || bytesLeft != 0) {
-            if (!input_->Skip(bytesLeft)) {
-                *error = "Unable to skip unread bytes.";
+        if (message) {
+            bool messageReadResult;
+            int bytesLeft = 0;
+            {
+                google::protobuf::io::CodedInputStream input(input_.get());
+                const google::protobuf::io::CodedInputStream::Limit limit =
+                    input.PushLimit(static_cast<int>(messageSize));
+                messageReadResult = message->ParseFromCodedStream(&input);
+                bytesLeft = input.BytesUntilLimit();
+                BOOST_ASSERT(bytesLeft >= 0);
+                input.PopLimit(limit);
+            }
+            if (!messageReadResult || bytesLeft != 0) {
+                if (!input_->Skip(bytesLeft)) {
+                    *error = "Unable to skip unread bytes.";
+                    state_ = State::kBad;
+                    input_ = nullptr;
+                    return false;
+                }
+                state_ = State::kFail;
+                *error = "Unable to read message.";
+                return false;
+            }
+            if (message->ByteSize() != static_cast<int>(messageSize)) {
+                BOOST_ASSERT(message->ByteSize() < static_cast<int>(messageSize));
+                state_ = State::kBad;
+                input_ = nullptr;
+                *error = str(boost::format("Corrupted message: unable to read %1% bytes.") % messageSize);
+                return false;
+            }
+        } else {
+            if (!input_->Skip(messageSize)) {
+                *error = "Unable to skip message.";
                 state_ = State::kBad;
                 input_ = nullptr;
                 return false;
             }
-            state_ = State::kFail;
-            *error = "Unable to read message.";
-            return false;
-        }
-        if (message.ByteSize() != static_cast<int>(messageSize)) {
-            BOOST_ASSERT(message.ByteSize() < static_cast<int>(messageSize));
-            state_ = State::kBad;
-            input_ = nullptr;
-            *error = str(boost::format("Corrupted message: unable to read %1% bytes.") % messageSize);
-            return false;
         }
         state_ = State::kOk;
         return true;
     } else {
         return false;
     }
+}
+
+bool LogReader::read_(google::protobuf::Message &message, std::string *error)
+{
+    return read_(&message, error);
 }
 
 bool LogReader::read_(google::protobuf::uint32 &uint32, const std::string &field, std::string *error)
@@ -215,6 +229,26 @@ LogReader::State LogReader::state() const
 const binlogs::MessageTypePool &LogReader::messageTypePool() const
 {
     return pool_;
+}
+
+bool LogReader::fastCheck(std::string *error)
+{
+    if (input_) {
+        BOOST_ASSERT(header_);
+        for (;;) {
+            if (!nextMessageType(error)) {
+                return state_ == State::kEof;
+            }
+            if (!read_(nullptr, error)) {
+                return false;
+            }
+        }
+    } else {
+        if (error) {
+            *error = "Stream is closed.";
+        }
+        return false;
+    }
 }
 
 }

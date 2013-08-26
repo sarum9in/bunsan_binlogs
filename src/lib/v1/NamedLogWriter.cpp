@@ -109,7 +109,7 @@ bool NamedLogWriter::open_(
             state_ = State::kBad;
             if (error) {
                 *error = str(boost::format(
-                    "Unable to open %1% file: %2%") % *error);
+                    "Unable to open %1% file: %2%") % path_ % *error);
             }
             return false;
         }
@@ -121,7 +121,9 @@ bool NamedLogWriter::open_(
             }
             return false;
         }
-        // TODO check log file
+        if (!logReader->fastCheck(error)) {
+            return false;
+        }
     }
     auto output = openFile_(path_, append, error);
     if (!output) {

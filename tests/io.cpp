@@ -1,6 +1,8 @@
 #define BOOST_TEST_MODULE io
 #include <boost/test/unit_test.hpp>
 
+#include "gzip.hpp"
+
 #include <bunsan/binlogs/io/file/open.hpp>
 #include <bunsan/binlogs/io/filter/gzip.hpp>
 
@@ -9,7 +11,6 @@
 #include <bunsan/testing/filesystem/write_data.hpp>
 
 #include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/io/gzip_stream.h>
 
 #include <boost/filesystem/operations.hpp>
 
@@ -100,53 +101,6 @@ BOOST_AUTO_TEST_SUITE(filter_)
 BOOST_FIXTURE_TEST_SUITE(gzip_, bunsan::testing::filesystem::tempfile)
 
 const std::string SOME_DATA = "Hello, world!";
-
-void checkIsGzip(const boost::filesystem::path &path)
-{
-    const std::string data = bunsan::testing::filesystem::read_data(path);
-    BOOST_REQUIRE(data.size() > 2);
-    BOOST_REQUIRE(data[0] == char(0x1f));
-    BOOST_REQUIRE(data[1] == char(0x8b));
-}
-
-std::string readGzip(const boost::filesystem::path &path)
-{
-    std::string error;
-    std::string data;
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path, &error);
-    BOOST_REQUIRE_MESSAGE(buffer, error);
-    {
-        google::protobuf::io::GzipInputStream gbuffer(buffer.get());
-        const void *chunk;
-        int size;
-        while (gbuffer.Next(&chunk, &size)) {
-            data.append(static_cast<const char *>(chunk), size);
-        }
-        const char *const err = gbuffer.ZlibErrorMessage();
-        if (err) {
-            BOOST_FAIL(err);
-        }
-    }
-    BOOST_REQUIRE(buffer->close());
-    return data;
-}
-
-void writeGzip(const boost::filesystem::path &path, const std::string &data)
-{
-    std::string error;
-    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(path, &error);
-    BOOST_REQUIRE_MESSAGE(buffer, error);
-    {
-        google::protobuf::io::GzipOutputStream gbuffer(buffer.get());
-        {
-            google::protobuf::io::CodedOutputStream os(&gbuffer);
-            os.WriteString(data);
-            BOOST_REQUIRE(!os.HadError());
-        }
-    }
-    BOOST_REQUIRE(buffer->close());
-    checkIsGzip(path);
-}
 
 BOOST_AUTO_TEST_CASE(openRead)
 {

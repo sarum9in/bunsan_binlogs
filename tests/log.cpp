@@ -1,6 +1,8 @@
 #define BOOST_TEST_MODULE log
 #include <boost/test/unit_test.hpp>
 
+#include "gzip.hpp"
+
 #include <bunsan/binlogs/io/file/open.hpp>
 #include <bunsan/binlogs/io/filter/gzip.hpp>
 #include <bunsan/binlogs/LogFactory.hpp>
@@ -10,6 +12,8 @@
 
 #include <bunsan/testing/filesystem/tempfile.hpp>
 #include <bunsan/testing/filesystem/tempfiles.hpp>
+
+#include <boost/filesystem/operations.hpp>
 
 BOOST_FIXTURE_TEST_SUITE(log_, bunsan::testing::filesystem::tempfile)
 
@@ -189,6 +193,37 @@ BOOST_AUTO_TEST_CASE(incompatibleHeader)
     namedLogWriter = openAppendOnly(path, header, &error);
     BOOST_CHECK_MESSAGE(!namedLogWriter, error);
 }
+
+BOOST_AUTO_TEST_SUITE(corrupted)
+
+BOOST_AUTO_TEST_CASE(gzip)
+{
+    namedLogWriter = openWriteOnly(path, getHeader(), &error);
+    BOOST_REQUIRE_MESSAGE(namedLogWriter, error);
+    writeTestData1(namedLogWriter.get());
+    if (!namedLogWriter->close(&error)) BOOST_FAIL(error);
+    const auto size = boost::filesystem::file_size(path);
+    BOOST_REQUIRE(size > 2);
+    boost::filesystem::resize_file(path, size / 2);
+    const bool ret = namedLogWriter->append(path, &error);
+    BOOST_CHECK_MESSAGE(!ret, error);
+}
+
+BOOST_AUTO_TEST_CASE(footer)
+{
+    namedLogWriter = openWriteOnly(path, getHeader(), &error);
+    BOOST_REQUIRE_MESSAGE(namedLogWriter, error);
+    writeTestData1(namedLogWriter.get());
+    if (!namedLogWriter->close(&error)) BOOST_FAIL(error);
+    std::string data = readGzip(path);
+    BOOST_REQUIRE(data.size() > 2);
+    data.resize(data.size() - 2);
+    writeGzip(path, data);
+    const bool ret = namedLogWriter->append(path, &error);
+    BOOST_CHECK_MESSAGE(!ret, error);
+}
+
+BOOST_AUTO_TEST_SUITE_END() // corrupted
 
 BOOST_AUTO_TEST_SUITE_END() // append
 
