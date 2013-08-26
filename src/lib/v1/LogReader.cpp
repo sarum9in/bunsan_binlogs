@@ -141,11 +141,10 @@ bool LogReader::read_(google::protobuf::Message &message, std::string *error)
                 input.PushLimit(static_cast<int>(messageSize));
             messageReadResult = message.ParseFromCodedStream(&input);
             bytesLeft = input.BytesUntilLimit();
+            BOOST_ASSERT(bytesLeft >= 0);
             input.PopLimit(limit);
         }
-        if (messageReadResult) {
-            BOOST_ASSERT(bytesLeft == 0);
-        } else {
+        if (!messageReadResult || bytesLeft != 0) {
             if (!input_->Skip(bytesLeft)) {
                 *error = "Unable to skip unread bytes.";
                 state_ = State::kBad;
