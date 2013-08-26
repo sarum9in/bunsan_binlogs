@@ -1,10 +1,14 @@
 #include <bunsan/binlogs/v1/BaseLogWriter.hpp>
+
 #include <bunsan/binlogs/detail/make_unique.hpp>
+#include <bunsan/binlogs/v1/format.hpp>
 
 #include <google/protobuf/io/coded_stream.h>
 
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
+
+#include <limits>
 
 namespace bunsan {
 namespace binlogs {
@@ -19,17 +23,35 @@ void BaseLogWriter::setOutput(std::unique_ptr<io::WriteBuffer> &&output)
 
 bool BaseLogWriter::closeOutput(std::string *error)
 {
-    const bool ret = output_->close();
-    if (!ret) {
-        BOOST_VERIFY(output_->error(error));
+    bool ret = true;
+    if (output_) {
+        ret = writeFooter(error);
+        if (ret) {
+            ret = output_->close();
+            if (!ret) {
+                BOOST_VERIFY(output_->error(error));
+            }
+        }
+        output_.reset();
     }
-    output_.reset();
     return ret;
 }
 
 bool BaseLogWriter::hasOutput() const
 {
     return static_cast<bool>(output_);
+}
+
+bool BaseLogWriter::writeFooter(std::string *error)
+{
+    BOOST_ASSERT(output_);
+    google::protobuf::io::CodedOutputStream output(output_.get());
+    output.WriteLittleEndian32(std::numeric_limits<google::protobuf::uint32>::max());
+    output.WriteRaw(&MAGIC_FOOTER, MAGIC_FOOTER.size());
+    if (hadError(output, "Unable to write footer.", nullptr, error)) {
+        return false;
+    }
+    return true;
 }
 
 const binlogs::MessageTypePool &BaseLogWriter::messageTypePool() const
@@ -65,17 +87,17 @@ BaseLogWriter::State BaseLogWriter::write(
             return state;
         }
         output.WriteLittleEndian32(messageType);
-        if (hadError(output, "Unable to write message type.", state, error)) {
+        if (hadError(output, "Unable to write message type.", &state, error)) {
             return state;
         }
     }
     const google::protobuf::uint32 messageSize = message.ByteSize();
     output.WriteLittleEndian32(messageSize);
-    if (hadError(output, "Unable to write message size.", state, error)) {
+    if (hadError(output, "Unable to write message size.", &state, error)) {
         return state;
     }
     message.SerializeWithCachedSizes(&output);
-    if (hadError(output, "Unable to write message.", state, error)) {
+    if (hadError(output, "Unable to write message.", &state, error)) {
         return state;
     }
     BOOST_ASSERT(!output.HadError());
@@ -85,11 +107,13 @@ BaseLogWriter::State BaseLogWriter::write(
 bool BaseLogWriter::hadError(
     const google::protobuf::io::CodedOutputStream &output,
     const std::string &msg,
-    State &state,
+    State *state,
     std::string *error)
 {
     if (output.HadError()) {
-        state = State::kBad;
+        if (state) {
+            *state = State::kBad;
+        }
         if (error) {
             *error = msg;
         }

@@ -1,57 +1,37 @@
 #include <bunsan/binlogs/LogFactory.hpp>
 
-#include <bunsan/binlogs/io/file/open.hpp>
-#include <bunsan/binlogs/io/filter/gzip.hpp>
+#include <bunsan/binlogs/detail/files.hpp>
+#include <bunsan/binlogs/detail/format.hpp>
+#include <bunsan/binlogs/detail/make_unique.hpp>
+#include <bunsan/binlogs/v1/format.hpp>
 #include <bunsan/binlogs/v1/LogReader.hpp>
 #include <bunsan/binlogs/v1/LogWriter.hpp>
 #include <bunsan/binlogs/v1/NamedLogWriter.hpp>
 
-#include <bunsan/binlogs/detail/make_unique.hpp>
-
-#include <google/protobuf/io/coded_stream.h>
-
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
-#include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <boost/uuid/string_generator.hpp>
 
 namespace bunsan {
 namespace binlogs {
 
-namespace {
+namespace current = v1;
 
-const boost::uuids::uuid MAGIC_FORMAT_V1 = boost::uuids::string_generator()("f6a03dc0-eaf5-11e2-91e2-0800200c9a66");
+namespace {
 
 bool writeMagic(io::WriteBuffer &output, std::string *error)
 {
-    google::protobuf::io::CodedOutputStream outp(&output);
-    outp.WriteRaw(&MAGIC_FORMAT_V1, static_cast<int>(MAGIC_FORMAT_V1.size()));
-    if (outp.HadError()) {
-        if (error) {
-            *error = "Unable to write format magic.";
-        }
-        return false;
-    }
-    return true;
+    return detail::writeFormatMagic(output, current::MAGIC_FORMAT, error);
 }
 
-std::unique_ptr<io::ReadBuffer> openFileReadOnly(const boost::filesystem::path &path, std::string *error)
+std::unique_ptr<io::WriteBuffer> openFileWriteOnly(
+    const boost::filesystem::path &path,
+    std::string *error)
 {
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path, error);
-    if (!buffer) return buffer;
-    buffer = io::filter::gzip::open(std::move(buffer), error);
-    return buffer;
-}
-
-std::unique_ptr<io::WriteBuffer> openFileWriteOnly(const boost::filesystem::path &path, std::string *error)
-{
-    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(path, error);
-    if (!buffer) return buffer;
-    buffer = io::filter::gzip::open(std::move(buffer), error);
-    if (!writeMagic(*buffer, error)) {
-        buffer.reset();
-    }
+    std::unique_ptr<io::WriteBuffer> buffer =
+        detail::openFileWriteOnly(path, error);
+    if (!buffer) return nullptr;
+    if (!writeMagic(*buffer, error)) return nullptr;
     return buffer;
 }
 
@@ -63,18 +43,12 @@ std::unique_ptr<LogReader> openReadOnly(
 {
     BOOST_ASSERT(input);
     boost::uuids::uuid format;
-    {
-        google::protobuf::io::CodedInputStream inp(input.get());
-        if (!inp.ReadRaw(&format, static_cast<int>(format.size()))) {
-            if (error) {
-                *error = "Unable to read format magic.";
-            }
-            return nullptr;
-        }
+    if (!detail::readFormatMagic(*input, format, error)) {
+        return nullptr;
     }
 
     std::unique_ptr<LogReader> logReader;
-    if (format == MAGIC_FORMAT_V1) {
+    if (format == v1::MAGIC_FORMAT) {
         logReader = detail::make_unique<v1::LogReader>(std::move(input));
     } else {
         if (error) {
@@ -91,7 +65,7 @@ std::unique_ptr<LogReader> openReadOnly(
     const boost::filesystem::path &path,
     std::string *error)
 {
-    auto input = openFileReadOnly(path, error);
+    auto input = detail::openFileReadOnly(path, error);
     if (!input) {
         if (error) {
             *error = str(boost::format("%1%: %2%") % path % *error);
@@ -114,7 +88,8 @@ std::unique_ptr<LogWriter> openWriteOnly(
     if (!writeMagic(*output, error)) {
         return nullptr;
     }
-    std::unique_ptr<LogWriter> logWriter = detail::make_unique<v1::LogWriter>(std::move(output));
+    std::unique_ptr<LogWriter> logWriter =
+        detail::make_unique<current::LogWriter>(std::move(output));
     if (!logWriter->Init(header, error)) {
         logWriter.reset();
     }
@@ -127,7 +102,7 @@ std::unique_ptr<NamedLogWriter> openWriteOnly(
     std::string *error)
 {
     std::unique_ptr<NamedLogWriter> logWriter =
-        detail::make_unique<v1::NamedLogWriter>(openFileWriteOnly);
+        detail::make_unique<current::NamedLogWriter>(openFileWriteOnly);
     if (!logWriter->Init(header, error)) {
         return nullptr;
     }

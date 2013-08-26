@@ -41,8 +41,7 @@ BOOST_AUTO_TEST_CASE(openReadError)
 {
     std::string error;
     std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly("/path/that/does/not/exist", &error);
-    BOOST_CHECK(!buffer);
-    BOOST_TEST_MESSAGE(error);
+    BOOST_CHECK_MESSAGE(!buffer, error);
 }
 
 BOOST_AUTO_TEST_CASE(openWrite)
@@ -66,8 +65,7 @@ BOOST_AUTO_TEST_CASE(openWriteError)
     boost::filesystem::permissions(path, boost::filesystem::no_perms);
     std::string error;
     std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(path, &error);
-    BOOST_CHECK(!buffer);
-    BOOST_TEST_MESSAGE(error);
+    BOOST_CHECK_MESSAGE(!buffer, error);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // file_
