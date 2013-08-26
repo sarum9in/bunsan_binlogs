@@ -8,6 +8,7 @@ namespace v1 {
 
 extern const std::string NAME;
 extern const boost::uuids::uuid MAGIC_FORMAT;
+extern const boost::uuids::uuid MAGIC_FOOTER;
 
 }
 }

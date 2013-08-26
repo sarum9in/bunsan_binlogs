@@ -26,6 +26,7 @@ protected:
     bool hasOutput() const;
 
     bool writeHeader(std::string *error=nullptr);
+    bool writeFooter(std::string *error=nullptr);
 
     State write(const std::string *const typeName,
                 const google::protobuf::Message &message,
@@ -36,7 +37,7 @@ protected:
 private:
     bool hadError(const google::protobuf::io::CodedOutputStream &output,
                   const std::string &msg,
-                  State &state,
+                  State *state,
                   std::string *error);
 
     std::unique_ptr<io::WriteBuffer> output_;

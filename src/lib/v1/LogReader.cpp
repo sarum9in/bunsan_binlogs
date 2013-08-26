@@ -1,10 +1,14 @@
 #include <bunsan/binlogs/v1/LogReader.hpp>
+
 #include <bunsan/binlogs/detail/make_unique.hpp>
+#include <bunsan/binlogs/v1/format.hpp>
 
 #include <google/protobuf/io/coded_stream.h>
 
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
+
+#include <limits>
 
 namespace bunsan {
 namespace binlogs {
@@ -59,6 +63,39 @@ const MessageType *LogReader::nextMessageType(std::string *error)
         if (!nextMessageType_) {
             google::protobuf::uint32 typeId;
             if (!read_(typeId, "type", error)) {
+                state_ = State::kBad;
+                input_ = nullptr;
+                return nullptr;
+            }
+            if (typeId == std::numeric_limits<google::protobuf::uint32>::max()) {
+                bool ret;
+                boost::uuids::uuid end;
+                {
+                    google::protobuf::io::CodedInputStream input(input_.get());
+                    ret = input.ReadRaw(&end, end.size());
+                }
+                if (!ret) {
+                    state_ = State::kBad;
+                    input_ = nullptr;
+                    if (error) {
+                        BOOST_VERIFY(input_->error(error));
+                        *error = str(boost::format("Unable to read footer: %1%") % *error);
+                    }
+                    return nullptr;
+                }
+                if (end != MAGIC_FOOTER) {
+                    state_ = State::kBad;
+                    input_ = nullptr;
+                    if (error) {
+                        *error = "Invalid footer.";
+                    }
+                    return nullptr;
+                }
+                state_ = State::kEof;
+                input_ = nullptr;
+                if (error) {
+                    *error = "End of file.";
+                }
                 return nullptr;
             }
             nextMessageType_ = pool_.type(typeId);
