@@ -3,9 +3,9 @@
 namespace bunsan {
 namespace binlogs {
 
-bool LogWriter::write(const google::protobuf::Message &message, std::string *error)
+void LogWriter::write(const google::protobuf::Message &message)
 {
-    return write(message.GetTypeName(), message, error);
+    write(message.GetTypeName(), message);
 }
 
 }

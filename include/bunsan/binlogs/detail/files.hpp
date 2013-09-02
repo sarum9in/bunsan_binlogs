@@ -11,13 +11,11 @@ namespace bunsan {
 namespace binlogs {
 namespace detail {
 
-std::unique_ptr<io::ReadBuffer> openFileReadOnly(
-    const boost::filesystem::path &path,
-    std::string *error=nullptr);
+std::unique_ptr<io::WriteBuffer> openFileAppendOnly(const boost::filesystem::path &path);
 
-std::unique_ptr<io::WriteBuffer> openFileWriteOnly(
-    const boost::filesystem::path &path,
-    std::string *error=nullptr);
+std::unique_ptr<io::ReadBuffer> openFileReadOnly(const boost::filesystem::path &path);
+
+std::unique_ptr<io::WriteBuffer> openFileWriteOnly(const boost::filesystem::path &path);
 
 }
 }

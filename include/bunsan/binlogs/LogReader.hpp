@@ -14,17 +14,21 @@ namespace binlogs {
 
 class LogReader: public BaseReader {
 public:
-    /// \warning Should always be called before object usage.
-    virtual bool Init(std::string *error=nullptr)=0;
-
     /// Allocate and read message of appropriate type.
-    std::unique_ptr<google::protobuf::Message> read(std::string *error=nullptr);
+    std::unique_ptr<google::protobuf::Message> read();
 
-    bool read(const std::unique_ptr<google::protobuf::Message> &message, std::string *error=nullptr);
-    virtual bool read(google::protobuf::Message &message, std::string *error=nullptr)=0;
+    /// False means EOF.
+    bool read(const std::unique_ptr<google::protobuf::Message> &message);
 
-    /// What message will be read next (if available)?
-    virtual const MessageType *nextMessageType(std::string *error=nullptr)=0;
+    /// False means EOF.
+    virtual bool read(google::protobuf::Message &message)=0;
+
+    /*!
+     * \brief What message will be read next (if available)?
+     *
+     * \return nullptr on EOF
+     */
+    virtual const MessageType *nextMessageType()=0;
 
     virtual const MessageTypePool &messageTypePool() const=0;
 };

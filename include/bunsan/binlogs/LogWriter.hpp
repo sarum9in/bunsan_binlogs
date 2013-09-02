@@ -13,14 +13,10 @@ namespace binlogs {
 
 class LogWriter: public BaseWriter {
 public:
-    /// \warning Should always be called before object usage.
-    virtual bool Init(const Header &header, std::string *error=nullptr)=0;
+    virtual void write(const google::protobuf::Message &message);
 
-    virtual bool write(const google::protobuf::Message &message, std::string *error=nullptr);
-
-    virtual bool write(const std::string &typeName,
-                       const google::protobuf::Message &message,
-                       std::string *error=nullptr)=0;
+    virtual void write(const std::string &typeName,
+                       const google::protobuf::Message &message)=0;
 
     virtual const MessageTypePool &messageTypePool() const=0;
 };

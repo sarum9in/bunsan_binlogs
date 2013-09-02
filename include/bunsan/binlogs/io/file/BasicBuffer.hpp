@@ -1,6 +1,8 @@
 #pragma once
 
+#include <bunsan/binlogs/io/file/Error.hpp>
 #include <bunsan/binlogs/io/WriteBuffer.hpp>
+#include <bunsan/binlogs/SystemError.hpp>
 
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 
@@ -18,26 +20,34 @@ template <typename BaseBuffer, typename StreamImpl>
 class BasicBuffer: public BaseBuffer {
 public:
     /// \return false if !closed()
-    bool open(const boost::filesystem::path &path)
+    void open(const boost::filesystem::path &path)
     {
-        if (!closed()) {
-            return false;
+        try {
+            if (!closed()) {
+                BOOST_THROW_EXCEPTION(OpenedError());
+            }
+            path_ = path;
+            stream_ = openFd(path, errno_);
+            checkError();
+        } catch (std::exception &) {
+            BOOST_THROW_EXCEPTION(OpenError().enable_nested_current());
         }
-        path_ = path;
-        stream_ = openFd(path, errno_);
-        return !getErrno();
     }
 
-    bool close() override
+    void close() override
     {
-        if (stream_) {
-            stream_->SetCloseOnDelete(false);
-            if (!stream_->Close()) {
-                errno_ = stream_->GetErrno();
+        try {
+            if (stream_) {
+                stream_->SetCloseOnDelete(false);
+                if (!stream_->Close()) {
+                    errno_ = stream_->GetErrno();
+                }
+                stream_.reset();
             }
-            stream_.reset();
+            checkError();
+        } catch (std::exception &) {
+            BOOST_THROW_EXCEPTION(CloseError().enable_nested_current());
         }
-        return !errno_;
     }
 
     bool closed() const override
@@ -64,6 +74,13 @@ public:
             return stream_->GetErrno();
         }
         return errno_;
+    }
+
+    void checkError() const override
+    {
+        if (getErrno()) {
+            BOOST_THROW_EXCEPTION(SystemError(getErrno()));
+        }
     }
 
 protected:

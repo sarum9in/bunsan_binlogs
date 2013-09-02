@@ -1,8 +1,9 @@
 #include <bunsan/binlogs/v1/MessageTypePool.hpp>
+
 #include <bunsan/binlogs/detail/make_unique.hpp>
+#include <bunsan/binlogs/Error.hpp>
 
 #include <boost/assert.hpp>
-#include <boost/format.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
 #include <functional>
@@ -11,19 +12,13 @@ namespace bunsan {
 namespace binlogs {
 namespace v1 {
 
-MessageTypePool::MessageTypePool():
-    pool_(&db_) {}
-
-bool MessageTypePool::Init(const Header &header, std::string *error)
+MessageTypePool::MessageTypePool(const Header &header):
+    header_(header),
+    pool_(&db_)
 {
-    header_ = header;
-
     for (const google::protobuf::FileDescriptorProto &proto: header_.proto.file()) {
         if (!db_.Add(proto)) {
-            if (error) {
-                *error = "File already in db.";
-            }
-            return false;
+            BOOST_THROW_EXCEPTION(FileAlreadyInDatabaseError());
         }
     }
 
@@ -35,21 +30,16 @@ bool MessageTypePool::Init(const Header &header, std::string *error)
         const google::protobuf::Descriptor *const descriptor =
             pool_.FindMessageTypeByName(type);
         if (!descriptor) {
-            if (error) {
-                *error = str(boost::format("Unable to allocate descriptor of \"%1%\" type.") % type);
-            }
-            return false;
+            BOOST_THROW_EXCEPTION(UnableToAllocateDescriptorError() <<
+                                  UnableToAllocateDescriptorError::DescriptorType(type));
         }
         const google::protobuf::Message *const prototype = factory_.GetPrototype(descriptor);
         if (!prototype) {
-            if (error) {
-                *error = str(boost::format("Unable to allocate prototype of \"%1%\" type.") % type);
-            }
-            return false;
+            BOOST_THROW_EXCEPTION(UnableToAllocatePrototypeError() <<
+                                  UnableToAllocatePrototypeError::DescriptorType(type));
         }
         messageType = detail::make_unique<MessageType>(descriptor, prototype);
     }
-    return true;
 }
 
 Header MessageTypePool::header() const

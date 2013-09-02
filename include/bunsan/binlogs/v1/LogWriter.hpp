@@ -19,15 +19,13 @@ namespace v1 {
 
 class LogWriter: public BaseLogWriter {
 public:
-    explicit LogWriter(std::unique_ptr<io::WriteBuffer> &&output);
+    LogWriter(const Header &header,
+              std::unique_ptr<io::WriteBuffer> &&output);
 
-    bool Init(const Header &header, std::string *error=nullptr) override;
+    void write(const std::string &typeName,
+               const google::protobuf::Message &message) override;
 
-    bool write(const std::string &typeName,
-               const google::protobuf::Message &message,
-               std::string *error=nullptr) override;
-
-    bool close(std::string *error=nullptr) override;
+    void close() override;
 
     State state() const override;
 

@@ -6,36 +6,23 @@
 namespace bunsan {
 namespace binlogs {
 
-bool AbstractNamedLogWriter::reopen(std::string *error)
+void AbstractNamedLogWriter::reopen()
 {
-    return reopen(path(), error);
+    reopen(path());
 }
 
-bool AbstractNamedLogWriter::reopen(const boost::filesystem::path &newPath, std::string *error)
+void AbstractNamedLogWriter::reopen(const boost::filesystem::path &newPath)
 {
-    if (!close(error)) {
-        return false;
-    }
-    return open(newPath, error);
+    close();
+    open(newPath);
 }
 
-bool AbstractNamedLogWriter::rotate(const boost::filesystem::path &renameTo, std::string *error)
+void AbstractNamedLogWriter::rotate(const boost::filesystem::path &renameTo)
 {
-    if (!close(error)) {
-        return false;
-    }
+    close();
     BOOST_ASSERT(state() == State::kEof);
-    {
-        boost::system::error_code ec;
-        boost::filesystem::rename(path(), renameTo, ec);
-        if (ec) {
-            if (error) {
-                *error = ec.message();
-            }
-            return false;
-        }
-    }
-    return open(path(), error);
+    boost::filesystem::rename(path(), renameTo);
+    open(path());
 }
 
 }

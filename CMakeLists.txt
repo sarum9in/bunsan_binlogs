@@ -16,6 +16,11 @@ bunsan_protobuf_generate_cpp(SOURCES proto_srcs HEADERS proto_hdrs INSTALL inclu
 bunsan_add_shared_library(${PROJECT_NAME}
     ${proto_srcs}
 
+    src/common/error.cpp
+    src/common/categorized_error.cpp
+    src/common/system_error.cpp
+
+    src/lib/Error.cpp
     src/lib/BaseIo.cpp
     src/lib/MessageType.cpp
     src/lib/MessageTypePool.cpp
@@ -39,6 +44,7 @@ bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/io/BaseBuffer.cpp
     src/lib/io/ReadBuffer.cpp
     src/lib/io/WriteBuffer.cpp
+    src/lib/io/file/AppendBuffer.cpp
     src/lib/io/file/ReadBuffer.cpp
     src/lib/io/file/WriteBuffer.cpp
     src/lib/io/file/open.cpp

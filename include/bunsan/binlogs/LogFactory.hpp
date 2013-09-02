@@ -13,27 +13,23 @@
 namespace bunsan {
 namespace binlogs {
 
-/// \note calls Init()
-std::unique_ptr<LogReader> openReadOnly(
-    std::unique_ptr<io::ReadBuffer> &&input,
-    std::string *error=nullptr);
+std::unique_ptr<LogReader> openReadOnly(std::unique_ptr<io::ReadBuffer> &&input);
 
-/// \note calls Init()
-std::unique_ptr<LogReader> openReadOnly(
-    const boost::filesystem::path &path,
-    std::string *error=nullptr);
+std::unique_ptr<LogReader> openReadOnly(const boost::filesystem::path &path);
 
-/// \note calls Init()
 std::unique_ptr<LogWriter> openWriteOnly(
     std::unique_ptr<io::WriteBuffer> &&output,
-    const Header &header,
-    std::string *error=nullptr);
+    const Header &header);
 
-/// \note calls Init()
+std::unique_ptr<NamedLogWriter> newWriter(const Header &header);
+
 std::unique_ptr<NamedLogWriter> openWriteOnly(
     const boost::filesystem::path &path,
-    const Header &header,
-    std::string *error=nullptr);
+    const Header &header);
+
+std::unique_ptr<NamedLogWriter> openAppendOnly(
+    const boost::filesystem::path &path,
+    const Header &header);
 
 }
 }

@@ -18,35 +18,37 @@ class NamedLogWriter:
 public:
     typedef std::function<
         std::unique_ptr<io::WriteBuffer> (
-            const boost::filesystem::path &, std::string *)> FileOpener;
+            const boost::filesystem::path &, bool /*append*/)> FileOpener;
 
 public:
-    explicit NamedLogWriter(const FileOpener &openFile);
+    NamedLogWriter(const FileOpener &openFile, const Header &header);
 
-    bool Init(const Header &header, std::string *error=nullptr) override;
+    void write(const std::string &typeName,
+               const google::protobuf::Message &message) override;
 
-    bool write(const std::string &typeName,
-               const google::protobuf::Message &message,
-               std::string *error=nullptr) override;
-
-    bool close(std::string *error=nullptr) override;
+    void close() override;
 
     State state() const override;
 
     boost::filesystem::path path() const override;
 
-    bool open(const boost::filesystem::path &path, std::string *error=nullptr) override;
+    void open(const boost::filesystem::path &path) override;
 
-    bool reopen(std::string *error=nullptr) override;
+    void append(const boost::filesystem::path &path) override;
 
-    bool reopen(const boost::filesystem::path &newPath, std::string *error=nullptr) override;
+    void reopen() override;
 
-    bool rotate(const boost::filesystem::path &renameTo, std::string *error=nullptr) override;
+    void reopen(const boost::filesystem::path &newPath) override;
+
+    void rotate(const boost::filesystem::path &renameTo) override;
 
 protected:
     const v1::MessageTypePool &messageTypePool__() const override;
 
     using BaseLogWriter::write;
+
+private:
+    void open_(const boost::filesystem::path &path, const bool append);
 
 private:
     FileOpener openFile_;

@@ -22,9 +22,11 @@ public:
     typedef std::uint32_t Id;
     static constexpr Id npos = std::numeric_limits<Id>::max();
 
-    MessageTypePool();
-
-    bool Init(const Header &header, std::string *error=nullptr);
+    /*!
+     * \note It is guaranteed that type mappings
+     * generated for equal headers are equal.
+     */
+    explicit MessageTypePool(const Header &header);
 
     Header header() const override;
 
@@ -40,10 +42,10 @@ public:
     range types() const override;
 
 private:
+    const Header header_;
     google::protobuf::SimpleDescriptorDatabase db_;
     google::protobuf::DescriptorPool pool_;
     google::protobuf::DynamicMessageFactory factory_;
-    Header header_;
     std::vector<std::unique_ptr<MessageType>> messageTypes_;
 };
 
