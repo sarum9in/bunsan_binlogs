@@ -23,7 +23,11 @@ public:
     /// False means EOF.
     virtual bool read(google::protobuf::Message &message)=0;
 
-    /// What message will be read next (if available)?
+    /*!
+     * \brief What message will be read next (if available)?
+     *
+     * \return nullptr on EOF
+     */
     virtual const MessageType *nextMessageType()=0;
 
     virtual const MessageTypePool &messageTypePool() const=0;
