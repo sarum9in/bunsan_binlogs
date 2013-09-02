@@ -18,6 +18,8 @@ namespace v1 {
 
 class BaseLogWriter: public virtual binlogs::LogWriter {
 public:
+    ~BaseLogWriter() override;
+
     const binlogs::MessageTypePool &messageTypePool() const override;
 
 protected:

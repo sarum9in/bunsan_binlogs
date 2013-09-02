@@ -15,6 +15,15 @@ namespace bunsan {
 namespace binlogs {
 namespace v1 {
 
+BaseLogWriter::~BaseLogWriter()
+{
+    try {
+        closeOutput();
+    } catch (...) {
+        // ignore
+    }
+}
+
 void BaseLogWriter::setOutput(std::unique_ptr<io::WriteBuffer> &&output)
 {
     BOOST_ASSERT(!output_);
