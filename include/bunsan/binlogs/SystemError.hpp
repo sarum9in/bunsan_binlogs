@@ -4,6 +4,7 @@
 
 #include <bunsan/system_error.hpp>
 #include <bunsan/filesystem/error.hpp>
+#include <bunsan/forward_constructor.hpp>
 
 #include <boost/uuid/uuid.hpp>
 
@@ -11,7 +12,7 @@ namespace bunsan {
 namespace binlogs {
 
 struct SystemError: bunsan::system_error, virtual Error {
-    using bunsan::system_error::system_error;
+    BUNSAN_INHERIT_CONSTRUCTOR(SystemError, system_error)
 };
 
 }
