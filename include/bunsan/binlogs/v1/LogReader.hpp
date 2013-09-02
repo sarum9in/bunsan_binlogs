@@ -21,13 +21,11 @@ class LogReader: public binlogs::LogReader {
 public:
     explicit LogReader(std::unique_ptr<io::ReadBuffer> &&input);
 
-    bool Init(std::string *error=nullptr) override;
+    bool read(google::protobuf::Message &message) override;
 
-    bool read(google::protobuf::Message &message, std::string *error=nullptr) override;
+    const MessageType *nextMessageType() override;
 
-    const MessageType *nextMessageType(std::string *error=nullptr) override;
-
-    bool close(std::string *error=nullptr) override;
+    void close() override;
 
     State state() const override;
 
@@ -39,17 +37,17 @@ public:
      *
      * \warning For internal library usage only.
      */
-    bool fastCheck(std::string *error=nullptr);
+    void fastCheck();
 
 private:
-    bool read_(google::protobuf::Message *message, std::string *error);
-    bool read_(google::protobuf::Message &message, std::string *error);
-    bool read_(google::protobuf::uint32 &uint32, const std::string &field, std::string *error);
+    void read_(google::protobuf::Message *message);
+    void read_(google::protobuf::Message &message);
+    void read_(google::protobuf::uint32 &uint32);
 
     std::unique_ptr<io::ReadBuffer> input_;
     boost::optional<const MessageType *> nextMessageType_;
     std::unique_ptr<HeaderData> header_;
-    MessageTypePool pool_;
+    std::unique_ptr<MessageTypePool> pool_;
     State state_ = State::kOk;
 };
 

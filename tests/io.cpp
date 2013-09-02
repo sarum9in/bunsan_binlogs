@@ -25,63 +25,53 @@ BOOST_AUTO_TEST_CASE(openAppend)
     const std::string PREFIX_DATA = "Hello, ";
     const std::string POSTFIX_DATA = "world!";
     bunsan::testing::filesystem::write_data(path, PREFIX_DATA);
-    std::string error;
-    std::unique_ptr<io::WriteBuffer> buffer = io::file::openAppendOnly(path, &error);
-    BOOST_REQUIRE_MESSAGE(buffer, error);
+    std::unique_ptr<io::WriteBuffer> buffer = io::file::openAppendOnly(path);
     {
         google::protobuf::io::CodedOutputStream os(buffer.get());
         os.WriteString(POSTFIX_DATA);
         BOOST_REQUIRE(!os.HadError());
     }
-    BOOST_REQUIRE(buffer->close());
+    buffer->close();
     BOOST_CHECK(!buffer->error());
     BOOST_CHECK_EQUAL(bunsan::testing::filesystem::read_data(path), PREFIX_DATA + POSTFIX_DATA);
 }
 
 BOOST_AUTO_TEST_CASE(openAppendError)
 {
-    std::string error;
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly("/path/that/does/not/exist", &error);
-    BOOST_CHECK_MESSAGE(!buffer, error);
+    BOOST_CHECK_THROW(io::file::openReadOnly("/path/that/does/not/exist"), std::exception);
 }
 
 BOOST_AUTO_TEST_CASE(openRead)
 {
     const std::string SOME_DATA = "Hello, world!";
     bunsan::testing::filesystem::write_data(path, SOME_DATA);
-    std::string error;
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path, &error);
-    BOOST_REQUIRE_MESSAGE(buffer, error);
+    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path);
     {
         google::protobuf::io::CodedInputStream is(buffer.get());
         std::string data;
         BOOST_REQUIRE(is.ReadString(&data, SOME_DATA.size()));
         BOOST_CHECK_EQUAL(data, SOME_DATA);
     }
-    BOOST_CHECK(buffer->close());
+    buffer->close();
     BOOST_CHECK(buffer->closed());
     BOOST_CHECK(!buffer->error());
 }
 
 BOOST_AUTO_TEST_CASE(openReadError)
 {
-    std::string error;
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly("/path/that/does/not/exist", &error);
-    BOOST_CHECK_MESSAGE(!buffer, error);
+    BOOST_CHECK_THROW(io::file::openReadOnly("/path/that/does/not/exist"), std::exception);
 }
 
 BOOST_AUTO_TEST_CASE(openWrite)
 {
     const std::string SOME_DATA = "Hello, world!";
-    std::string error;
-    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(path, &error);
-    BOOST_REQUIRE_MESSAGE(buffer, error);
+    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(path);
     {
         google::protobuf::io::CodedOutputStream os(buffer.get());
         os.WriteString(SOME_DATA);
         BOOST_REQUIRE(!os.HadError());
     }
-    BOOST_REQUIRE(buffer->close());
+    buffer->close();
     BOOST_CHECK(!buffer->error());
     BOOST_CHECK_EQUAL(bunsan::testing::filesystem::read_data(path), SOME_DATA);
 }
@@ -89,9 +79,7 @@ BOOST_AUTO_TEST_CASE(openWrite)
 BOOST_AUTO_TEST_CASE(openWriteError)
 {
     boost::filesystem::permissions(path, boost::filesystem::no_perms);
-    std::string error;
-    std::unique_ptr<io::WriteBuffer> buffer = io::file::openWriteOnly(path, &error);
-    BOOST_CHECK_MESSAGE(!buffer, error);
+    BOOST_CHECK_THROW(io::file::openWriteOnly(path), std::exception);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // file_
@@ -105,18 +93,14 @@ const std::string SOME_DATA = "Hello, world!";
 BOOST_AUTO_TEST_CASE(openRead)
 {
     writeGzip(path, SOME_DATA);
-    std::string error;
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path, &error);
-    BOOST_REQUIRE_MESSAGE(buffer, error);
-    buffer = io::filter::gzip::open(std::move(buffer), &error);
-    BOOST_REQUIRE_MESSAGE(buffer, error);
+    std::unique_ptr<io::ReadBuffer> buffer = io::filter::gzip::open(io::file::openReadOnly(path));
     {
         google::protobuf::io::CodedInputStream is(buffer.get());
         std::string data;
         BOOST_REQUIRE(is.ReadString(&data, SOME_DATA.size()));
         BOOST_CHECK_EQUAL(data, SOME_DATA);
     }
-    BOOST_CHECK(buffer->close());
+    buffer->close();
     BOOST_CHECK(buffer->closed());
     BOOST_CHECK(!buffer->error());
 }
@@ -124,30 +108,27 @@ BOOST_AUTO_TEST_CASE(openRead)
 BOOST_AUTO_TEST_CASE(openReadError)
 {
     bunsan::testing::filesystem::write_data(path, "NOT GZIP DATA");
-    std::string error;
-    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path, &error);
-    BOOST_REQUIRE_MESSAGE(buffer, error);
-    buffer = io::filter::gzip::open(std::move(buffer), &error);
-    if (buffer) {
-        google::protobuf::io::CodedInputStream is(buffer.get());
-        std::string data;
-        BOOST_REQUIRE(!is.ReadString(&data, 10));
-        BOOST_REQUIRE(buffer->error(&error));
+    std::unique_ptr<io::ReadBuffer> buffer = io::file::openReadOnly(path);
+    try {
+        buffer = io::filter::gzip::open(std::move(buffer));
+    } catch (std::exception &e) {
+        BOOST_TEST_MESSAGE("Passed error test: " << path << ": " << e.what());
     }
-    BOOST_TEST_MESSAGE("Passed error test: " << path << ": " << error);
+    google::protobuf::io::CodedInputStream is(buffer.get());
+    std::string data;
+    BOOST_CHECK(!is.ReadString(&data, 10));
+    BOOST_CHECK_THROW(buffer->checkError(), std::exception);
 }
 
 BOOST_AUTO_TEST_CASE(openWrite)
 {
-    std::string error;
-    std::unique_ptr<io::WriteBuffer> buffer = io::filter::gzip::open(io::file::openWriteOnly(path, &error));
-    BOOST_REQUIRE_MESSAGE(buffer, error);
+    std::unique_ptr<io::WriteBuffer> buffer = io::filter::gzip::open(io::file::openWriteOnly(path));
     {
         google::protobuf::io::CodedOutputStream os(buffer.get());
         os.WriteString(SOME_DATA);
         BOOST_REQUIRE(!os.HadError());
     }
-    BOOST_REQUIRE(buffer->close());
+    buffer->close();
     BOOST_CHECK(!buffer->error());
     checkIsGzip(path);
     BOOST_CHECK_EQUAL(readGzip(path), SOME_DATA);
@@ -158,15 +139,13 @@ BOOST_AUTO_TEST_CASE(gzipAppend)
     const std::string PREFIX_DATA = "Hello, ";
     const std::string POSTFIX_DATA = "world!";
     writeGzip(path, PREFIX_DATA);
-    std::string error;
-    std::unique_ptr<io::WriteBuffer> buffer = io::filter::gzip::open(io::file::openAppendOnly(path, &error));
-    BOOST_REQUIRE_MESSAGE(buffer, error);
+    std::unique_ptr<io::WriteBuffer> buffer = io::filter::gzip::open(io::file::openAppendOnly(path));
     {
         google::protobuf::io::CodedOutputStream os(buffer.get());
         os.WriteString(POSTFIX_DATA);
         BOOST_REQUIRE(!os.HadError());
     }
-    BOOST_REQUIRE(buffer->close());
+    buffer->close();
     BOOST_CHECK(!buffer->error());
     checkIsGzip(path);
     BOOST_CHECK_EQUAL(readGzip(path), PREFIX_DATA + POSTFIX_DATA);

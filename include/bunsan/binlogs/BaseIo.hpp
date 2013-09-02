@@ -20,7 +20,7 @@ public:
 
     virtual ~BaseIo();
 
-    virtual bool close(std::string *error=nullptr)=0;
+    virtual void close()=0;
 
     virtual State state() const=0;
 

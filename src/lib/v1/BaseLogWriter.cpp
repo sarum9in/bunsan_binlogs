@@ -1,12 +1,13 @@
 #include <bunsan/binlogs/v1/BaseLogWriter.hpp>
 
 #include <bunsan/binlogs/detail/make_unique.hpp>
+#include <bunsan/binlogs/v1/Error.hpp>
 #include <bunsan/binlogs/v1/format.hpp>
 
 #include <google/protobuf/io/coded_stream.h>
 
 #include <boost/assert.hpp>
-#include <boost/format.hpp>
+#include <boost/scope_exit.hpp>
 
 #include <limits>
 
@@ -21,20 +22,20 @@ void BaseLogWriter::setOutput(std::unique_ptr<io::WriteBuffer> &&output)
     BOOST_ASSERT(output_);
 }
 
-bool BaseLogWriter::closeOutput(std::string *error)
+void BaseLogWriter::closeOutput()
 {
-    bool ret = true;
     if (output_) {
-        ret = writeFooter(error);
-        if (ret) {
-            ret = output_->close();
-            if (!ret) {
-                BOOST_VERIFY(output_->error(error));
-            }
+        BOOST_SCOPE_EXIT_ALL(this)
+        {
+            output_.reset();
+        };
+        try {
+            writeFooter();
+        } catch (std::exception &) {
+            output_.reset();
+            BOOST_THROW_EXCEPTION(UnableToCloseOutputError().enable_nested_current());
         }
-        output_.reset();
     }
-    return ret;
 }
 
 bool BaseLogWriter::hasOutput() const
@@ -42,27 +43,34 @@ bool BaseLogWriter::hasOutput() const
     return static_cast<bool>(output_);
 }
 
-bool BaseLogWriter::writeFooter(std::string *error)
+#define BUNSAN_BINLOGS_THROW_FROM_OUTPUT(ERROR, ...) \
+    try { \
+        BOOST_ASSERT(output_); \
+        output_->checkError(); \
+    } catch (std::exception &) { \
+        BOOST_THROW_EXCEPTION(ERROR.enable_nested_current() __VA_ARGS__); \
+    } \
+    BOOST_THROW_EXCEPTION(ERROR __VA_ARGS__)
+
+void BaseLogWriter::writeFooter()
 {
     BOOST_ASSERT(output_);
     google::protobuf::io::CodedOutputStream output(output_.get());
     output.WriteLittleEndian32(std::numeric_limits<google::protobuf::uint32>::max());
     output.WriteRaw(&MAGIC_FOOTER, MAGIC_FOOTER.size());
-    if (hadError(output, "Unable to write footer.", nullptr, error)) {
-        return false;
+    if (output.HadError()) {
+        BUNSAN_BINLOGS_THROW_FROM_OUTPUT(UnableToWriteFooterError());
     }
-    return true;
 }
 
-bool BaseLogWriter::writeContinue(std::string *error)
+void BaseLogWriter::writeContinue()
 {
     BOOST_ASSERT(output_);
     google::protobuf::io::CodedOutputStream output(output_.get());
     output.WriteRaw(&MAGIC_CONTINUE, MAGIC_CONTINUE.size());
-    if (hadError(output, "Unable to write continue magic.", nullptr, error)) {
-        return false;
+    if (output.HadError()) {
+        BUNSAN_BINLOGS_THROW_FROM_OUTPUT(UnableToWriteContinueMagicError());
     }
-    return true;
 }
 
 const binlogs::MessageTypePool &BaseLogWriter::messageTypePool() const
@@ -70,68 +78,41 @@ const binlogs::MessageTypePool &BaseLogWriter::messageTypePool() const
     return messageTypePool__();
 }
 
-BaseLogWriter::State BaseLogWriter::write(
+#define BUNSAN_BINLOGS_TRY_THROW_FROM_OUTPUT(ERROR, ...) \
+    if (output.HadError()) { \
+        BUNSAN_BINLOGS_THROW_FROM_OUTPUT(ERROR, __VA_ARGS__); \
+    }
+
+void BaseLogWriter::write(
     const std::string *const typeName,
-    const google::protobuf::Message &message,
-    std::string *error)
+    const google::protobuf::Message &message)
 {
     BOOST_ASSERT(output_);
-    State state = State::kOk;
     google::protobuf::io::CodedOutputStream output(output_.get());
     if (!message.IsInitialized()) {
-        state = State::kFail;
-        if (error) {
-            *error = str(boost::format("Unable to write incomplete message of %1% type, "
-                                       "uninitialized fields: [%2%].") %
-                message.GetTypeName() %
-                message.InitializationErrorString());
-        }
-        return state;
+        std::vector<std::string> fields;
+        message.FindInitializationErrors(&fields);
+        BOOST_THROW_EXCEPTION(UninitializedMessageError() <<
+                              Recoverable(true) <<
+                              UninitializedMessageError::UninitializedFields(fields) <<
+                              UninitializedMessageError::MessageTypeName(message.GetTypeName()));
     }
     if (typeName) {
         const google::protobuf::uint32 messageType = messageTypePool__().typeId(*typeName);
         if (messageType == MessageTypePool::npos) {
-            state = State::kFail;
-            if (error) {
-                *error = str(boost::format("Type \"%1%\" is not registered."));
-            }
-            return state;
+            BOOST_THROW_EXCEPTION(UnknownMessageTypeError() <<
+                                  Recoverable(true) <<
+                                  UnknownMessageTypeError::MessageTypeName(*typeName));
         }
         output.WriteLittleEndian32(messageType);
-        if (hadError(output, "Unable to write message type.", &state, error)) {
-            return state;
-        }
+        BUNSAN_BINLOGS_TRY_THROW_FROM_OUTPUT(UnableToWriteMessageTypeError());
     }
     const google::protobuf::uint32 messageSize = message.ByteSize();
     output.WriteLittleEndian32(messageSize);
-    if (hadError(output, "Unable to write message size.", &state, error)) {
-        return state;
-    }
+    BUNSAN_BINLOGS_TRY_THROW_FROM_OUTPUT(UnableToWriteMessageSizeError());
     message.SerializeWithCachedSizes(&output);
-    if (hadError(output, "Unable to write message.", &state, error)) {
-        return state;
-    }
+    BUNSAN_BINLOGS_TRY_THROW_FROM_OUTPUT(UnableToWriteMessageError());
     BOOST_ASSERT(!output.HadError());
-    return state;
-}
-
-bool BaseLogWriter::hadError(
-    const google::protobuf::io::CodedOutputStream &output,
-    const std::string &msg,
-    State *state,
-    std::string *error)
-{
-    if (output.HadError()) {
-        if (state) {
-            *state = State::kBad;
-        }
-        if (error) {
-            *error = msg;
-        }
-        return true;
-    } else {
-        return false;
-    }
 }
 
 }

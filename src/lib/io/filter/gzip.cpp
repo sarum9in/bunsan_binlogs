@@ -59,23 +59,17 @@ class GzipWriteBuffer: public GzipBasicBuffer<WriteBuffer, google::protobuf::io:
 
 }
 
-std::unique_ptr<ReadBuffer> open(std::unique_ptr<ReadBuffer> &&buffer, std::string *error)
+std::unique_ptr<ReadBuffer> open(std::unique_ptr<ReadBuffer> &&buffer)
 {
     std::unique_ptr<GzipReadBuffer> gzip = detail::make_unique<GzipReadBuffer>();
-    if (!gzip->open(std::move(buffer))) {
-        BOOST_VERIFY(gzip->error(error));
-        gzip.reset();
-    }
+    gzip->open(std::move(buffer));
     return std::move(gzip);
 }
 
-std::unique_ptr<WriteBuffer> open(std::unique_ptr<WriteBuffer> &&buffer, std::string *error)
+std::unique_ptr<WriteBuffer> open(std::unique_ptr<WriteBuffer> &&buffer)
 {
     std::unique_ptr<GzipWriteBuffer> gzip = detail::make_unique<GzipWriteBuffer>();
-    if (!gzip->open(std::move(buffer))) {
-        BOOST_VERIFY(gzip->error(error));
-        gzip.reset();
-    }
+    gzip->open(std::move(buffer));
     return std::move(gzip);
 }
 

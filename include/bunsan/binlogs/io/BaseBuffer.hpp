@@ -12,11 +12,14 @@ class BaseBuffer: private boost::noncopyable {
 public:
     virtual ~BaseBuffer();
 
-    virtual bool close()=0;
+    virtual void close()=0;
 
     virtual bool closed() const=0;
 
     virtual bool error(std::string *error=nullptr) const=0;
+
+    /// \throws if (error())
+    virtual void checkError() const;
 };
 
 }

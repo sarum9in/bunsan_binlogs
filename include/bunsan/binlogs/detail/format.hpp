@@ -9,15 +9,13 @@ namespace bunsan {
 namespace binlogs {
 namespace detail {
 
-bool readFormatMagic(
+void readFormatMagic(
     io::ReadBuffer &input,
-    boost::uuids::uuid &format,
-    std::string *error=nullptr);
+    boost::uuids::uuid &format);
 
-bool writeFormatMagic(
+void writeFormatMagic(
     io::WriteBuffer &output,
-    const boost::uuids::uuid &format,
-    std::string *error=nullptr);
+    const boost::uuids::uuid &format);
 
 }
 }

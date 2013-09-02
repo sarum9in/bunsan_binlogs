@@ -1,8 +1,8 @@
 #pragma once
 
-#include <bunsan/binlogs/io/BaseBuffer.hpp>
-
 #include <bunsan/binlogs/detail/make_unique.hpp>
+#include <bunsan/binlogs/io/BaseBuffer.hpp>
+#include <bunsan/binlogs/io/filter/Error.hpp>
 
 #include <boost/assert.hpp>
 
@@ -15,25 +15,50 @@ template <typename BaseBuffer, typename StreamImpl>
 class BasicBuffer: public BaseBuffer {
 public:
     /// \return false if !closed()
-    bool open(std::unique_ptr<BaseBuffer> &&source)
+    void open(std::unique_ptr<BaseBuffer> &&source)
     {
-        if (!closed()) {
-            return false;
+        try {
+            if (!closed()) {
+                BOOST_THROW_EXCEPTION(OpenedError());
+            }
+            BOOST_ASSERT(source);
+            BOOST_ASSERT(!source->closed());
+            source_ = std::move(source);
+            BOOST_ASSERT(source_);
+            stream_ = detail::make_unique<StreamImpl>(this->source());
+            checkError();
+        } catch (std::exception &) {
+            BOOST_THROW_EXCEPTION(OpenError().enable_nested_current());
         }
-        BOOST_ASSERT(source);
-        BOOST_ASSERT(!source->closed());
-        source_ = std::move(source);
-        BOOST_ASSERT(source_);
-        stream_ = detail::make_unique<StreamImpl>(this->source());
-        return !streamError();
     }
 
-    bool close() override
+    void close() override
     {
-        const bool streamOk = streamClose();
+        boost::exception_ptr streamError, sourceError;
+        try {
+            streamClose();
+        } catch (std::exception &) {
+            streamError = boost::current_exception();
+        }
         stream_.reset();
-        const bool sourceOk = source_->close();
-        return streamOk && sourceOk;
+        try {
+            source_->close();
+        } catch (std::exception &) {
+            sourceError = boost::current_exception();
+        }
+        if (streamError && sourceError) {
+            BOOST_THROW_EXCEPTION(CloseError() <<
+                                  CloseError::StreamError(streamError) <<
+                                  CloseError::SourceError(sourceError));
+        }
+        if (streamError) {
+            BOOST_THROW_EXCEPTION(CloseError() <<
+                                  CloseError::StreamError(streamError));
+        }
+        if (sourceError) {
+            BOOST_THROW_EXCEPTION(CloseError() <<
+                                  CloseError::SourceError(sourceError));
+        }
     }
 
     bool closed() const override
@@ -51,6 +76,8 @@ public:
         }
         return false;
     }
+
+    using BaseBuffer::checkError;
 
 protected:
     virtual bool streamError(std::string *error=nullptr) const=0;

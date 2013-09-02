@@ -17,11 +17,9 @@ void checkIsGzip(const boost::filesystem::path &path)
 
 std::string readGzip(const boost::filesystem::path &path)
 {
-    std::string error;
     std::string data;
     std::unique_ptr<bunsan::binlogs::io::ReadBuffer> buffer =
-        bunsan::binlogs::io::file::openReadOnly(path, &error);
-    BOOST_REQUIRE_MESSAGE(buffer, error);
+        bunsan::binlogs::io::file::openReadOnly(path);
     {
         google::protobuf::io::GzipInputStream gbuffer(buffer.get());
         const void *chunk;
@@ -34,16 +32,14 @@ std::string readGzip(const boost::filesystem::path &path)
             BOOST_FAIL(err);
         }
     }
-    BOOST_REQUIRE(buffer->close());
+    buffer->close();
     return data;
 }
 
 void writeGzip(const boost::filesystem::path &path, const std::string &data)
 {
-    std::string error;
     std::unique_ptr<bunsan::binlogs::io::WriteBuffer> buffer =
-        bunsan::binlogs::io::file::openWriteOnly(path, &error);
-    BOOST_REQUIRE_MESSAGE(buffer, error);
+        bunsan::binlogs::io::file::openWriteOnly(path);
     {
         google::protobuf::io::GzipOutputStream gbuffer(buffer.get());
         {
@@ -52,6 +48,6 @@ void writeGzip(const boost::filesystem::path &path, const std::string &data)
             BOOST_REQUIRE(!os.HadError());
         }
     }
-    BOOST_REQUIRE(buffer->close());
+    buffer->close();
     checkIsGzip(path);
 }

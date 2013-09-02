@@ -13,16 +13,13 @@ namespace io {
 namespace file {
 
 std::unique_ptr<io::ReadBuffer> openReadOnly(
-    const boost::filesystem::path &path,
-    std::string *error=nullptr);
+    const boost::filesystem::path &path);
 
 std::unique_ptr<io::WriteBuffer> openWriteOnly(
-    const boost::filesystem::path &path,
-    std::string *error=nullptr);
+    const boost::filesystem::path &path);
 
 std::unique_ptr<io::WriteBuffer> openAppendOnly(
-    const boost::filesystem::path &path,
-    std::string *error=nullptr);
+    const boost::filesystem::path &path);
 
 }
 }

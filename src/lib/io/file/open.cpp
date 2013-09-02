@@ -13,38 +13,26 @@ namespace io {
 namespace file {
 
 std::unique_ptr<io::WriteBuffer> openAppendOnly(
-    const boost::filesystem::path &path,
-    std::string *error)
+    const boost::filesystem::path &path)
 {
     std::unique_ptr<AppendBuffer> buffer_ = detail::make_unique<AppendBuffer>();
-    if (!buffer_->open(path)) {
-        BOOST_VERIFY(buffer_->error(error));
-        buffer_.reset();
-    }
+    buffer_->open(path);
     return std::move(buffer_);
 }
 
 std::unique_ptr<io::ReadBuffer> openReadOnly(
-    const boost::filesystem::path &path,
-    std::string *error)
+    const boost::filesystem::path &path)
 {
     std::unique_ptr<ReadBuffer> buffer_ = detail::make_unique<ReadBuffer>();
-    if (!buffer_->open(path)) {
-        BOOST_VERIFY(buffer_->error(error));
-        buffer_.reset();
-    }
+    buffer_->open(path);
     return std::move(buffer_);
 }
 
 std::unique_ptr<io::WriteBuffer> openWriteOnly(
-    const boost::filesystem::path &path,
-    std::string *error)
+    const boost::filesystem::path &path)
 {
     std::unique_ptr<WriteBuffer> buffer_ = detail::make_unique<WriteBuffer>();
-    if (!buffer_->open(path)) {
-        BOOST_VERIFY(buffer_->error(error));
-        buffer_.reset();
-    }
+    buffer_->open(path);
     return std::move(buffer_);
 }
 

@@ -5,62 +5,51 @@
 #include <bunsan/binlogs/detail/make_unique.hpp>
 #include <bunsan/binlogs/io/file/open.hpp>
 #include <bunsan/binlogs/io/filter/gzip.hpp>
+#include <bunsan/binlogs/v1/Error.hpp>
 #include <bunsan/binlogs/v1/format.hpp>
 #include <bunsan/binlogs/v1/LogReader.hpp>
 
 #include <boost/filesystem/operations.hpp>
-#include <boost/format.hpp>
 
 namespace bunsan {
 namespace binlogs {
 namespace v1 {
 
-NamedLogWriter::NamedLogWriter(const FileOpener &openFile):
-    openFile_(openFile) {}
-
-bool NamedLogWriter::Init(const Header &header, std::string *error)
+NamedLogWriter::NamedLogWriter(const FileOpener &openFile, const Header &header):
+    openFile_(openFile), pool_(header)
 {
-    if (!pool_.Init(header, error)) {
-        return false;
-    }
     headerData_ = detail::make_unique<HeaderData>();
     *headerData_->mutable_proto() = header.proto;
     for (const std::string &type: header.types) {
         headerData_->add_types()->set_name(type);
     }
-    return true;
 }
 
-bool NamedLogWriter::write(
+void NamedLogWriter::write(
     const std::string &typeName,
-    const google::protobuf::Message &message,
-    std::string *error)
+    const google::protobuf::Message &message)
 {
-    if (hasOutput()) {
-        BOOST_ASSERT(headerData_);
-        state_ = write(&typeName, message, error);
-        switch (state_) {
-        case State::kOk:
-            return true;
-        case State::kBad:
-        case State::kEof:
-            closeOutput();
-        case State::kFail:
-            return false;
+    if (!hasOutput()) {
+        BOOST_THROW_EXCEPTION(ClosedWriterError());
+    }
+    BOOST_ASSERT(headerData_);
+    try {
+        write(&typeName, message);
+    } catch (std::exception &e) {
+        if (recoverable(e)) {
+            state_ = State::kFail;
+        } else {
+            state_ = State::kBad;
+            try { closeOutput(); } catch (std::exception &) {}
         }
-        BOOST_ASSERT(false);
-    } else {
-        if (error) {
-            *error = "NamedLogWriter is closed.";
-        }
-        return false;
+        BOOST_THROW_EXCEPTION(UnableToWriteMessageError().enable_nested_current());
     }
 }
 
-bool NamedLogWriter::close(std::string *error)
+void NamedLogWriter::close()
 {
     state_ = State::kEof;
-    return closeOutput(error);
+    closeOutput();
 }
 
 NamedLogWriter::State NamedLogWriter::state() const
@@ -73,130 +62,101 @@ boost::filesystem::path NamedLogWriter::path() const
     return path_;
 }
 
-bool NamedLogWriter::open_(
+void NamedLogWriter::open_(
     const boost::filesystem::path &path,
-    const bool append,
-    std::string *error)
+    const bool append)
 {
     if (hasOutput()) {
-        if (error) {
-            *error = "NamedLogWriter is already opened.";
-        }
-        return false;
+        BOOST_THROW_EXCEPTION(OpenedWriterError());
     }
-    path_ = path;
-    if (append) {
-        auto input = detail::openFileReadOnly(path_, error);
-        if (!input) {
-            state_ = State::kBad;
-            return false;
-        }
-        boost::uuids::uuid format;
-        if (!detail::readFormatMagic(*input, format, error)) {
-            state_ = State::kBad;
-            return false;
-        }
-        if (format != MAGIC_FORMAT) {
-            state_ = State::kBad;
-            if (error) {
-                *error = str(boost::format(
-                    "File %1% does not have \"%2%\" format.") % NAME);
+    try {
+        path_ = path;
+        if (append) {
+            auto input = detail::openFileReadOnly(path_);
+            boost::uuids::uuid format;
+            detail::readFormatMagic(*input, format);
+            if (format != MAGIC_FORMAT) {
+                BOOST_THROW_EXCEPTION(IncompatibleFormatError() <<
+                                      IncompatibleFormatError::Format(format));
             }
-            return false;
-        }
-        auto logReader = detail::make_unique<LogReader>(std::move(input));
-        if (!logReader->Init(error)) {
-            state_ = State::kBad;
-            if (error) {
-                *error = str(boost::format(
-                    "Unable to open %1% file: %2%") % path_ % *error);
+            auto logReader = detail::make_unique<LogReader>(std::move(input));
+            if (logReader->messageTypePool().header() != pool_.header()) {
+                BOOST_THROW_EXCEPTION(IncompatibleHeaderError());
             }
-            return false;
+            logReader->fastCheck();
         }
-        if (logReader->messageTypePool().header() != pool_.header()) {
-            state_ = State::kBad;
-            if (error) {
-                *error = str(boost::format(
-                    "%1%: Incompatible header.") % path_);
+        setOutput(openFile_(path_, append));
+        if (append) {
+            writeContinue();
+        } else {
+            try {
+                write(nullptr, *headerData_);
+            } catch (std::exception &) {
+                BOOST_THROW_EXCEPTION(UnableToWriteHeaderError().enable_nested_current());
             }
-            return false;
         }
-        if (!logReader->fastCheck(error)) {
-            return false;
+    } catch (std::exception &) {
+        if (boost::exception *const e = boost::current_exception_cast<boost::exception>()) {
+            *e << Error::Path(path_);
         }
+        state_ = State::kBad;
+        try { closeOutput(); } catch (std::exception &) {}
+        throw;
     }
-    auto output = openFile_(path_, append, error);
-    if (!output) {
-        return false;
-    }
-    setOutput(std::move(output));
-    if (append) {
-        if (!writeContinue(error)) {
-            return false;
-        }
-    } else {
-        state_ = write(nullptr, *headerData_, error);
-        if (state_ != State::kOk) {
-            state_ = State::kBad;
-            closeOutput();
-            if (error) {
-                *error = "Unable to write header: " + *error;
-            }
-            return false;
-        }
-    }
-    return true;
 }
 
-bool NamedLogWriter::open(const boost::filesystem::path &path, std::string *error)
+void NamedLogWriter::open(const boost::filesystem::path &path)
 {
-    return open_(path, false, error);
+    try {
+        open_(path, false);
+    } catch (std::exception &) {
+        BOOST_THROW_EXCEPTION(NamedLogWriterOpenError().enable_nested_current());
+    }
 }
 
-bool NamedLogWriter::append(const boost::filesystem::path &path, std::string *error)
+void NamedLogWriter::append(const boost::filesystem::path &path)
 {
-    return open_(path, true, error);
+    try {
+        open_(path, true);
+    } catch (std::exception &) {
+        BOOST_THROW_EXCEPTION(NamedLogWriterAppendError().enable_nested_current());
+    }
 }
 
-bool NamedLogWriter::reopen(std::string *error)
+void NamedLogWriter::reopen()
 {
-    return reopen(path_, error);
+    try {
+        reopen(path_);
+    } catch (std::exception &) {
+        BOOST_THROW_EXCEPTION(NamedLogWriterReopenError().enable_nested_current());
+    }
 }
 
-bool NamedLogWriter::reopen(const boost::filesystem::path &newPath, std::string *error)
+void NamedLogWriter::reopen(const boost::filesystem::path &newPath)
 {
-    if (!hasOutput()) {
-        if (error) {
-            *error = "NamedLogWriter is not opened.";
+    try {
+        if (!hasOutput()) {
+            BOOST_THROW_EXCEPTION(ClosedWriterError());
         }
-        return false;
+        close();
+        open(newPath);
+    } catch (std::exception &) {
+        BOOST_THROW_EXCEPTION(NamedLogWriterReopenError().enable_nested_current());
     }
-    if (!close(error)) {
-        return false;
-    }
-    return open(newPath, error);
 }
 
-bool NamedLogWriter::rotate(const boost::filesystem::path &renameTo, std::string *error)
+void NamedLogWriter::rotate(const boost::filesystem::path &renameTo)
 {
-    if (!hasOutput()) {
-        if (error) {
-            *error = "NamedLogWriter is not opened.";
+    try {
+        if (!hasOutput()) {
+            BOOST_THROW_EXCEPTION(ClosedWriterError());
         }
-        return false;
+        close();
+        boost::filesystem::rename(path_, renameTo);
+        open(path_);
+    } catch (std::exception &) {
+        BOOST_THROW_EXCEPTION(NamedLogWriterRotateError().enable_nested_current());
     }
-    if (!close(error)) {
-        return false;
-    }
-    boost::system::error_code ec;
-    boost::filesystem::rename(path_, renameTo, ec);
-    if (ec) {
-        if (error) {
-            *error = ec.message();
-        }
-        return false;
-    }
-    return open(path_, error);
 }
 
 const v1::MessageTypePool &NamedLogWriter::messageTypePool__() const

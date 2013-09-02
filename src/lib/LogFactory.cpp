@@ -3,13 +3,13 @@
 #include <bunsan/binlogs/detail/files.hpp>
 #include <bunsan/binlogs/detail/format.hpp>
 #include <bunsan/binlogs/detail/make_unique.hpp>
+#include <bunsan/binlogs/Error.hpp>
 #include <bunsan/binlogs/v1/format.hpp>
 #include <bunsan/binlogs/v1/LogReader.hpp>
 #include <bunsan/binlogs/v1/LogWriter.hpp>
 #include <bunsan/binlogs/v1/NamedLogWriter.hpp>
 
 #include <boost/assert.hpp>
-#include <boost/format.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
 namespace bunsan {
@@ -19,130 +19,101 @@ namespace current = v1;
 
 namespace {
 
-bool writeMagic(io::WriteBuffer &output, std::string *error)
+void writeMagic(io::WriteBuffer &output)
 {
-    return detail::writeFormatMagic(output, current::MAGIC_FORMAT, error);
+    detail::writeFormatMagic(output, current::MAGIC_FORMAT);
 }
 
 std::unique_ptr<io::WriteBuffer> openFileWriteOnly(
     const boost::filesystem::path &path,
-    const bool append,
-    std::string *error)
+    const bool append)
 {
     std::unique_ptr<io::WriteBuffer> buffer;
     if (append) {
-        buffer = detail::openFileAppendOnly(path, error);
+        buffer = detail::openFileAppendOnly(path);
     } else {
-        buffer = detail::openFileWriteOnly(path, error);
+        buffer = detail::openFileWriteOnly(path);
     }
-    if (!buffer) return nullptr;
+    BOOST_ASSERT(buffer);
     if (!append) {
-        if (!writeMagic(*buffer, error)) return nullptr;
+        writeMagic(*buffer);
     }
     return buffer;
 }
 
 }
 
-std::unique_ptr<LogReader> openReadOnly(
-    std::unique_ptr<io::ReadBuffer> &&input,
-    std::string *error)
+std::unique_ptr<LogReader> openReadOnly(std::unique_ptr<io::ReadBuffer> &&input)
 {
     BOOST_ASSERT(input);
     boost::uuids::uuid format;
-    if (!detail::readFormatMagic(*input, format, error)) {
-        return nullptr;
-    }
+    detail::readFormatMagic(*input, format);
 
     std::unique_ptr<LogReader> logReader;
     if (format == v1::MAGIC_FORMAT) {
         logReader = detail::make_unique<v1::LogReader>(std::move(input));
     } else {
-        if (error) {
-            *error = str(boost::format("Unknown format {%1%}.") % format);
-        }
-    }
-    if (logReader && !logReader->Init(error)) {
-        logReader.reset();
+        BOOST_THROW_EXCEPTION(UnknownFormatError() <<
+                              UnknownFormatError::Format(format));
     }
     return logReader;
 }
 
-std::unique_ptr<LogReader> openReadOnly(
-    const boost::filesystem::path &path,
-    std::string *error)
+std::unique_ptr<LogReader> openReadOnly(const boost::filesystem::path &path)
 {
-    auto input = detail::openFileReadOnly(path, error);
-    if (!input) {
-        if (error) {
-            *error = str(boost::format("%1%: %2%") % path % *error);
-        }
-        return nullptr;
+    try {
+        auto input = detail::openFileReadOnly(path);
+        auto logReader = openReadOnly(std::move(input));
+        return logReader;
+    } catch (boost::exception &e) {
+        e << Error::Path(path);
+        throw;
     }
-    auto logReader = openReadOnly(std::move(input), error);
-    if (!logReader && error) {
-        *error = str(boost::format("%1%: %2%") % path % *error);
-    }
-    return logReader;
 }
 
 std::unique_ptr<LogWriter> openWriteOnly(
     std::unique_ptr<io::WriteBuffer> &&output,
-    const Header &header,
-    std::string *error)
+    const Header &header)
 {
     BOOST_ASSERT(output);
-    if (!writeMagic(*output, error)) {
-        return nullptr;
-    }
+    writeMagic(*output);
     std::unique_ptr<LogWriter> logWriter =
-        detail::make_unique<current::LogWriter>(std::move(output));
-    if (!logWriter->Init(header, error)) {
-        logWriter.reset();
-    }
+        detail::make_unique<current::LogWriter>(
+            header, std::move(output));
     return logWriter;
 }
 
-std::unique_ptr<NamedLogWriter> newWriter(
-    const Header &header,
-    std::string *error)
+std::unique_ptr<NamedLogWriter> newWriter(const Header &header)
 {
-    std::unique_ptr<NamedLogWriter> logWriter =
-        detail::make_unique<current::NamedLogWriter>(openFileWriteOnly);
-    if (!logWriter->Init(header, error)) {
-        return nullptr;
-    }
-    return logWriter;
+    return detail::make_unique<current::NamedLogWriter>(openFileWriteOnly, header);
 }
 
 std::unique_ptr<NamedLogWriter> openWriteOnly(
     const boost::filesystem::path &path,
-    const Header &header,
-    std::string *error)
+    const Header &header)
 {
-    std::unique_ptr<NamedLogWriter> logWriter = newWriter(header, error);
-    if (!logWriter) {
-        return nullptr;
+    try {
+        std::unique_ptr<NamedLogWriter> logWriter = newWriter(header);
+        logWriter->open(path);
+        return logWriter;
+    } catch (boost::exception &e) {
+        e << Error::Path(path);
+        throw;
     }
-    if (!logWriter->open(path, error)) {
-        return nullptr;
-    }
-    return logWriter;
 }
 
 std::unique_ptr<NamedLogWriter> openAppendOnly(
     const boost::filesystem::path &path,
-    const Header &header,
-    std::string *error)
+    const Header &header)
 {
-    std::unique_ptr<NamedLogWriter> logWriter = newWriter(header, error);
-    if (!logWriter) {
-        return nullptr;
+    try {
+        std::unique_ptr<NamedLogWriter> logWriter = newWriter(header);
+        logWriter->append(path);
+        return logWriter;
+    } catch (boost::exception &e) {
+        e << Error::Path(path);
+        throw;
     }
-    if (!logWriter->append(path, error)) {
-        return nullptr;
-    }
-    return logWriter;
 }
 
 }

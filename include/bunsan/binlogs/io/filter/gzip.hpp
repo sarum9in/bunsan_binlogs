@@ -11,9 +11,9 @@ namespace io {
 namespace filter {
 namespace gzip {
 
-std::unique_ptr<ReadBuffer> open(std::unique_ptr<ReadBuffer> &&buffer, std::string *error=nullptr);
+std::unique_ptr<ReadBuffer> open(std::unique_ptr<ReadBuffer> &&buffer);
 
-std::unique_ptr<WriteBuffer> open(std::unique_ptr<WriteBuffer> &&buffer, std::string *error=nullptr);
+std::unique_ptr<WriteBuffer> open(std::unique_ptr<WriteBuffer> &&buffer);
 
 }
 }

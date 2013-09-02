@@ -6,6 +6,7 @@ cmake_minimum_required(VERSION 2.8)
 
 include(BunsanCommon)
 
+bunsan_use_bunsan(common)
 bunsan_use_boost(system filesystem thread)
 bunsan_use_protobuf()
 
@@ -16,6 +17,7 @@ bunsan_protobuf_generate_cpp(SOURCES proto_srcs HEADERS proto_hdrs INSTALL inclu
 bunsan_add_shared_library(${PROJECT_NAME}
     ${proto_srcs}
 
+    src/lib/Error.cpp
     src/lib/BaseIo.cpp
     src/lib/MessageType.cpp
     src/lib/MessageTypePool.cpp
