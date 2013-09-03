@@ -65,6 +65,7 @@ namespace bunsan
     #if BOOST_VERSION >= 105400
             return boost::error_info_name(x);
     #else
+            (void) x;
             return boost::units::detail::demangle(typeid(Tag *).name());
     #endif
         }
