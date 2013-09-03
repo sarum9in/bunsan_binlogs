@@ -2,6 +2,7 @@
 
 #include <boost/exception/all.hpp>
 #include <boost/units/detail/utility.hpp>
+#include <boost/version.hpp>
 
 #include <exception>
 
