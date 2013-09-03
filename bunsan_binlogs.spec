@@ -62,6 +62,7 @@ rm -rf %{buildroot}
 
 %files devel
 %defattr (-,root,root,-)
+%{_includedir}/bunsan/*
 %{_includedir}/bunsan/binlogs/*
 %{_includedir}/bunsan/binlogs/detail/*
 %{_includedir}/bunsan/binlogs/io/*
