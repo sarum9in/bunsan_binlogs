@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/exception/all.hpp>
+#include <boost/units/detail/utility.hpp>
 
 #include <exception>
 
@@ -51,5 +52,17 @@ namespace bunsan
         typedef boost::error_info<struct tag_message, std::string> message;
 
         typedef boost::errinfo_nested_exception nested_exception;
+
+        template <typename Tag, typename T>
+        static inline std::string info_name(const boost::error_info<Tag, T> &x)
+        {
+    #if BOOST_VERSION >= 105400
+            return boost::error_info_name(x);
+    #elif BOOST_VERSION >= 103700
+            return boost::units::detail::demangle(x.tag_typeid_name());
+    #else
+            return boost::units::detail::demangle(x.tag_typeid().name());
+    #endif
+        }
     };
 }

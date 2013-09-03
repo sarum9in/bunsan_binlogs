@@ -21,7 +21,7 @@ namespace boost
     std::string to_string(const bunsan::categorized_error::error_code &ec)
     {
         std::ostringstream sout;
-        sout << "[" << boost::error_info_name(ec) << "] = " <<
+        sout << "[" << bunsan::error::info_name(ec) << "] = " <<
                 ec.value() << ": " << ec.value().message() << '\n';
         return sout.str();
     }
