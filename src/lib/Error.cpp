@@ -7,7 +7,7 @@ namespace boost {
 std::string to_string(const bunsan::binlogs::FormatError::Format &format)
 {
     std::ostringstream sout;
-    sout << '[' << boost::error_info_name(format) << "] = " <<
+    sout << '[' << bunsan::error::info_name(format) << "] = " <<
             '{' << format.value() << "}\n";
     return sout.str();
 }
@@ -15,7 +15,7 @@ std::string to_string(const bunsan::binlogs::FormatError::Format &format)
 std::string to_string(const bunsan::binlogs::UninitializedMessageError::UninitializedFields &fields)
 {
     std::ostringstream sout;
-    sout << '[' << boost::error_info_name(fields) << "] = ";
+    sout << '[' << bunsan::error::info_name(fields) << "] = ";
     bool first = true;
     for (const std::string &field: fields.value()) {
         if (!first) {
