@@ -6,6 +6,11 @@
 
 #include <exception>
 
+// see bunsan::error::info_name()
+#if BOOST_VERSION < 105400
+#   include <typeinfo>
+#endif
+
 namespace bunsan
 {
     struct error: virtual std::exception, virtual boost::exception
@@ -59,10 +64,8 @@ namespace bunsan
         {
     #if BOOST_VERSION >= 105400
             return boost::error_info_name(x);
-    #elif BOOST_VERSION >= 103700
-            return boost::units::detail::demangle(x.tag_typeid_name().c_str());
     #else
-            return boost::units::detail::demangle(x.tag_typeid().name());
+            return boost::units::detail::demangle(typeid(Tag *).name());
     #endif
         }
     };
