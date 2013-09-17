@@ -57,6 +57,10 @@ bunsan_add_executable(${PROJECT_NAME}_read
     src/bin/read.cpp
 )
 
+bunsan_add_executable(${PROJECT_NAME}_fast_check
+    src/bin/fast_check.cpp
+)
+
 bunsan_install_headers()
 bunsan_install_targets(${PROJECT_NAME} ${PROJECT_NAME}_read)
 
