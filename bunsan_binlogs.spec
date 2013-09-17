@@ -57,6 +57,7 @@ rm -rf %{buildroot}
 %files
 %defattr (-,root,root,-)
 %{_libdir}/libbunsan_binlogs.so
+%{_bindir}/bunsan_binlogs_fast_check
 %{_bindir}/bunsan_binlogs_read
 
 
