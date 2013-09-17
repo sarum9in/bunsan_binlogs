@@ -19,5 +19,12 @@ std::unique_ptr<google::protobuf::Message> LogReader::read()
     return nullptr;
 }
 
+void LogReader::fastCheck()
+{
+    while (read()) {
+        continue;
+    }
+}
+
 }
 }

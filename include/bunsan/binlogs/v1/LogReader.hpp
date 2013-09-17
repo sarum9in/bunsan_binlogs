@@ -31,13 +31,7 @@ public:
 
     const binlogs::MessageTypePool &messageTypePool() const override;
 
-    /*!
-     * \brief Check stream's format without parsing messages.
-     * Consumes entire stream.
-     *
-     * \warning For internal library usage only.
-     */
-    void fastCheck();
+    void fastCheck() override;
 
 private:
     void read_(google::protobuf::Message *message);

@@ -31,6 +31,19 @@ public:
     virtual const MessageType *nextMessageType()=0;
 
     virtual const MessageTypePool &messageTypePool() const=0;
+
+    /*!
+     * \brief Check stream's format in fastest way possible.
+     *
+     * \note Implementation may omit messages consistency check
+     * and treat them as byte arrays.
+     *
+     * Consumes entire stream.
+     *
+     * \note Default implementation reads all messages to the EOF.
+     * Should be reimplemented in subclass for faster implementation.
+     */
+    virtual void fastCheck();
 };
 
 }
