@@ -25,7 +25,7 @@ namespace v1 {
         BOOST_ASSERT(input_); \
         input_->checkError(); \
     } catch (std::exception &) { \
-        BOOST_THROW_EXCEPTION(ERROR.enable_nested_current() __VA_ARGS__); \
+        BOOST_THROW_EXCEPTION(ERROR << enable_nested_current() __VA_ARGS__); \
     } \
     BOOST_THROW_EXCEPTION(ERROR __VA_ARGS__)
 
@@ -39,7 +39,8 @@ LogReader::LogReader(std::unique_ptr<io::ReadBuffer> &&input):
     } catch (std::exception &) {
         state_ = State::kBad;
         input_ = nullptr;
-        BOOST_THROW_EXCEPTION(UnableToParseHeaderError().enable_nested_current());
+        BOOST_THROW_EXCEPTION(UnableToParseHeaderError() <<
+                              enable_nested_current());
     }
     Header header;
     header.proto = header_->proto();
@@ -74,7 +75,8 @@ const MessageType *LogReader::nextMessageType()
                 try {
                     read_(typeId);
                 } catch (std::exception &) {
-                    BOOST_THROW_EXCEPTION(UnableToReadMessageTypeError().enable_nested_current());
+                    BOOST_THROW_EXCEPTION(UnableToReadMessageTypeError() <<
+                                          enable_nested_current());
                 }
                 if (typeId == std::numeric_limits<google::protobuf::uint32>::max()) {
                     bool retFooter, retContinue;
@@ -120,7 +122,8 @@ void LogReader::read_(google::protobuf::Message *message)
     try {
         read_(messageSize);
     } catch (std::exception &) {
-        BOOST_THROW_EXCEPTION(UnableToReadMessageSizeError().enable_nested_current());
+        BOOST_THROW_EXCEPTION(UnableToReadMessageSizeError() <<
+                              enable_nested_current());
     }
 
     if (message) {

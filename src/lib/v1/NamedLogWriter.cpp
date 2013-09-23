@@ -42,7 +42,8 @@ void NamedLogWriter::write(
             state_ = State::kBad;
             try { closeOutput(); } catch (std::exception &) {}
         }
-        BOOST_THROW_EXCEPTION(UnableToWriteMessageError().enable_nested_current());
+        BOOST_THROW_EXCEPTION(UnableToWriteMessageError() <<
+                              enable_nested_current());
     }
 }
 
@@ -92,7 +93,8 @@ void NamedLogWriter::open_(
             try {
                 write(nullptr, *headerData_);
             } catch (std::exception &) {
-                BOOST_THROW_EXCEPTION(UnableToWriteHeaderError().enable_nested_current());
+                BOOST_THROW_EXCEPTION(UnableToWriteHeaderError() <<
+                                      enable_nested_current());
             }
         }
     } catch (std::exception &) {
@@ -110,7 +112,8 @@ void NamedLogWriter::open(const boost::filesystem::path &path)
     try {
         open_(path, false);
     } catch (std::exception &) {
-        BOOST_THROW_EXCEPTION(NamedLogWriterOpenError().enable_nested_current());
+        BOOST_THROW_EXCEPTION(NamedLogWriterOpenError() <<
+                              enable_nested_current());
     }
 }
 
@@ -119,7 +122,8 @@ void NamedLogWriter::append(const boost::filesystem::path &path)
     try {
         open_(path, true);
     } catch (std::exception &) {
-        BOOST_THROW_EXCEPTION(NamedLogWriterAppendError().enable_nested_current());
+        BOOST_THROW_EXCEPTION(NamedLogWriterAppendError() <<
+                              enable_nested_current());
     }
 }
 
@@ -128,7 +132,8 @@ void NamedLogWriter::reopen()
     try {
         reopen(path_);
     } catch (std::exception &) {
-        BOOST_THROW_EXCEPTION(NamedLogWriterReopenError().enable_nested_current());
+        BOOST_THROW_EXCEPTION(NamedLogWriterReopenError() <<
+                              enable_nested_current());
     }
 }
 
@@ -141,7 +146,8 @@ void NamedLogWriter::reopen(const boost::filesystem::path &newPath)
         close();
         open(newPath);
     } catch (std::exception &) {
-        BOOST_THROW_EXCEPTION(NamedLogWriterReopenError().enable_nested_current());
+        BOOST_THROW_EXCEPTION(NamedLogWriterReopenError() <<
+                              enable_nested_current());
     }
 }
 
@@ -155,7 +161,8 @@ void NamedLogWriter::rotate(const boost::filesystem::path &renameTo)
         boost::filesystem::rename(path_, renameTo);
         open(path_);
     } catch (std::exception &) {
-        BOOST_THROW_EXCEPTION(NamedLogWriterRotateError().enable_nested_current());
+        BOOST_THROW_EXCEPTION(NamedLogWriterRotateError() <<
+                              enable_nested_current());
     }
 }
 

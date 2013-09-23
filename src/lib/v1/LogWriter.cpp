@@ -27,7 +27,8 @@ LogWriter::LogWriter(
     } catch (std::exception &) {
         state_ = State::kBad;
         try { closeOutput(); } catch (std::exception &) {}
-        BOOST_THROW_EXCEPTION(UnableToWriteHeaderError().enable_nested_current());
+        BOOST_THROW_EXCEPTION(UnableToWriteHeaderError() <<
+                              enable_nested_current());
     }
 }
 
@@ -49,7 +50,8 @@ void LogWriter::write(const std::string &typeName,
             state_ = State::kBad;
             try { closeOutput(); } catch (std::exception &) {}
         }
-        BOOST_THROW_EXCEPTION(UnableToWriteMessageError().enable_nested_current());
+        BOOST_THROW_EXCEPTION(UnableToWriteMessageError() <<
+                              enable_nested_current());
     }
 }
 

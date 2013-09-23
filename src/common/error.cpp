@@ -12,13 +12,12 @@ const char *bunsan::error::what() const noexcept
     return boost::diagnostic_information_what(*this);
 }
 
-bunsan::error &bunsan::error::enable_nested(const boost::exception_ptr &ptr)
+void bunsan::enable_nested::operator()(const boost::exception &e) const
 {
-    (*this) << nested_exception(ptr);
-    return *this;
+    e << error::nested_exception(m_ptr);
 }
 
-bunsan::error &bunsan::error::enable_nested_current()
+void bunsan::enable_nested_current::operator()(const boost::exception &e) const
 {
-    return enable_nested(boost::current_exception());
+    e << enable_nested(boost::current_exception());
 }

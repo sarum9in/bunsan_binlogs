@@ -30,7 +30,8 @@ public:
             stream_ = openFd(path, errno_);
             checkError();
         } catch (std::exception &) {
-            BOOST_THROW_EXCEPTION(OpenError().enable_nested_current());
+            BOOST_THROW_EXCEPTION(OpenError() <<
+                                  enable_nested_current());
         }
     }
 
@@ -46,7 +47,8 @@ public:
             }
             checkError();
         } catch (std::exception &) {
-            BOOST_THROW_EXCEPTION(CloseError().enable_nested_current());
+            BOOST_THROW_EXCEPTION(CloseError() <<
+                                  enable_nested_current());
         }
     }
 

@@ -28,7 +28,8 @@ public:
             stream_ = detail::make_unique<StreamImpl>(this->source());
             checkError();
         } catch (std::exception &) {
-            BOOST_THROW_EXCEPTION(OpenError().enable_nested_current());
+            BOOST_THROW_EXCEPTION(OpenError() <<
+                                  enable_nested_current());
         }
     }
 

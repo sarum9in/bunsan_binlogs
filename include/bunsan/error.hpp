@@ -1,5 +1,7 @@
 #pragma once
 
+#include <bunsan/error/manip.hpp>
+
 #include <boost/exception/all.hpp>
 #include <boost/units/detail/utility.hpp>
 #include <boost/version.hpp>
@@ -51,9 +53,6 @@ namespace bunsan
             return boost::get_error_info<ErrorInfo>(*this);
         }
 
-        error &enable_nested(const boost::exception_ptr &ptr);
-        error &enable_nested_current();
-
         /// Human readable error message
         typedef boost::error_info<struct tag_message, std::string> message;
 
@@ -70,4 +69,24 @@ namespace bunsan
     #endif
         }
     };
+
+    template<>
+    class error_manip<struct tag_enable_nested>
+    {
+    public:
+        explicit error_manip(const boost::exception_ptr &ptr): m_ptr(ptr) {}
+
+        void operator()(const boost::exception &e) const;
+
+    private:
+        boost::exception_ptr m_ptr;
+    };
+    typedef error_manip<tag_enable_nested> enable_nested;
+
+    template<>
+    struct error_manip<struct tag_enable_nested_current>
+    {
+        void operator()(const boost::exception &e) const;
+    };
+    typedef error_manip<tag_enable_nested_current> enable_nested_current;
 }

@@ -42,7 +42,8 @@ void BaseLogWriter::closeOutput()
             writeFooter();
         } catch (std::exception &) {
             output_.reset();
-            BOOST_THROW_EXCEPTION(UnableToCloseOutputError().enable_nested_current());
+            BOOST_THROW_EXCEPTION(UnableToCloseOutputError() <<
+                                  enable_nested_current());
         }
     }
 }
@@ -57,7 +58,7 @@ bool BaseLogWriter::hasOutput() const
         BOOST_ASSERT(output_); \
         output_->checkError(); \
     } catch (std::exception &) { \
-        BOOST_THROW_EXCEPTION(ERROR.enable_nested_current() __VA_ARGS__); \
+        BOOST_THROW_EXCEPTION(ERROR << enable_nested_current() __VA_ARGS__); \
     } \
     BOOST_THROW_EXCEPTION(ERROR __VA_ARGS__)
 
