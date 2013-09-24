@@ -228,6 +228,38 @@ BOOST_AUTO_TEST_SUITE_END() // append
 
 BOOST_FIXTURE_TEST_SUITE(directory_log_, bunsan::testing::filesystem::tempdir)
 
+BOOST_AUTO_TEST_CASE(listDir)
+{
+    const std::vector<std::string> paths = {
+        "bunsan_binlog_000000000.gz",
+        "bunsan_binlog_000000001.gz",
+        "bunsan_binlog_000000002.gz",
+        "bunsan_binlog_000000003.gz",
+        "bunsan_binlog_000000005.gz",
+        "bunsan_binlog_000010003.gz",
+        "bunsan_binlog_999909999.gz",
+        "bunsan_binlog_999999999.gz",
+    };
+    const std::vector<std::string> nonLogPaths = {
+        "123",
+        "bunsan_binlog_0.gz",
+        "bunsan_binlog_0000000000.gz",
+        "bunsan_binlog_0000000001.gz",
+        "bunsan_binlog_1000000000.gz",
+    };
+    for (const std::string &name: paths) {
+        bunsan::testing::filesystem::write_data(path / name, "");
+    }
+    for (const std::string &name: nonLogPaths) {
+        bunsan::testing::filesystem::write_data(path / name, "");
+    }
+    const std::vector<boost::filesystem::path> result = detail::directory_log::listDir(path);
+    BOOST_REQUIRE_EQUAL(result.size(), paths.size());
+    for (std::size_t i = 0; i < paths.size(); ++i) {
+        BOOST_CHECK_EQUAL(result[i], path / paths[i]);
+    }
+}
+
 BOOST_AUTO_TEST_CASE(nextPath)
 {
     const std::vector<std::string> paths = {

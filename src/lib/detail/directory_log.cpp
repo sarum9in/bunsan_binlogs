@@ -6,6 +6,8 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include <algorithm>
+
 namespace bunsan {
 namespace binlogs {
 namespace detail {
@@ -16,16 +18,18 @@ constexpr std::size_t decpow(const std::size_t pow)
     return pow == 0 ? 1 : 10 * decpow(pow - 1);
 }
 
-boost::filesystem::path nextPath(const boost::filesystem::path &path)
+namespace {
+
+const std::string NAME_PREFIX = "bunsan_binlog_";
+constexpr std::size_t ID_SIZE = 9;
+constexpr std::size_t ID_END = decpow(ID_SIZE);
+const std::string NAME_SUFFIX = ".gz";
+const std::string NAME_FORMAT =
+    NAME_PREFIX + "%|0" + boost::lexical_cast<std::string>(ID_SIZE) + "|" + NAME_SUFFIX;
+
+template <typename F>
+void walk(const boost::filesystem::path &path, const F &f)
 {
-    static const std::string NAME_PREFIX = "bunsan_binlog_";
-    constexpr std::size_t ID_SIZE = 9;
-    constexpr std::size_t ID_END = decpow(ID_SIZE);
-    static const std::string NAME_SUFFIX = ".gz";
-    static const std::string NAME_FORMAT =
-        NAME_PREFIX + "%|0" + boost::lexical_cast<std::string>(ID_SIZE) + "|" + NAME_SUFFIX;
-    std::size_t maxId = 0;
-    bool found = false;
     for (boost::filesystem::directory_iterator i(path), end; i != end; ++i) {
         const boost::filesystem::path filename = i->path().filename();
         const std::string name = filename.string();
@@ -37,16 +41,46 @@ boost::filesystem::path nextPath(const boost::filesystem::path &path)
                 name.substr(NAME_PREFIX.size(), ID_SIZE);
             if (boost::algorithm::all(nameId, boost::algorithm::is_digit())) {
                 const std::size_t id = boost::lexical_cast<std::size_t>(nameId);
-                maxId = std::max(id, maxId);
-                found = true;
+                f(id, i->path());
             }
         }
     }
+}
+
+std::string toName(const std::size_t id)
+{
+    return str(boost::format(NAME_FORMAT) % id);
+}
+
+}
+
+std::vector<boost::filesystem::path> listDir(const boost::filesystem::path &path)
+{
+    std::vector<boost::filesystem::path> list;
+    walk(path,
+        [&list](const std::size_t /*id*/, const boost::filesystem::path &path)
+        {
+            list.push_back(path);
+        });
+    std::sort(list.begin(), list.end());
+    return list;
+}
+
+boost::filesystem::path nextPath(const boost::filesystem::path &path)
+{
+    std::size_t maxId = 0;
+    bool found = false;
+    walk(path,
+        [&maxId, &found](const std::size_t id, const boost::filesystem::path &/*path*/)
+        {
+            maxId = std::max(id, maxId);
+            found = true;
+        });
     const std::size_t nextId = maxId + found;
     if (nextId >= ID_END) {
         BOOST_THROW_EXCEPTION(TooManyLogFilesError());
     }
-    return path / str(boost::format(NAME_FORMAT) % nextId);
+    return path / toName(nextId);
 }
 
 }
