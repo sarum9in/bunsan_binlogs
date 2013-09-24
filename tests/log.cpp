@@ -260,8 +260,9 @@ BOOST_AUTO_TEST_CASE(listDir)
     }
 }
 
-BOOST_AUTO_TEST_CASE(nextPath)
+BOOST_AUTO_TEST_CASE(last_next_path)
 {
+    BOOST_CHECK(!detail::directory_log::lastPath(path));
     const std::vector<std::string> paths = {
         "bunsan_binlog_000000000.gz",
         "bunsan_binlog_000000001.gz",
@@ -271,9 +272,11 @@ BOOST_AUTO_TEST_CASE(nextPath)
     for (const boost::filesystem::path &next: paths) {
         BOOST_CHECK_EQUAL(path / next, detail::directory_log::nextPath(path));
         bunsan::testing::filesystem::write_data(path / next, "");
+        BOOST_CHECK_EQUAL(detail::directory_log::lastPath(path), path / next);
     }
     bunsan::testing::filesystem::write_data(path / "bunsan_binlog_999999999.gz", "");
     BOOST_CHECK_THROW(detail::directory_log::nextPath(path), detail::directory_log::TooManyLogFilesError);
+    BOOST_CHECK_EQUAL(detail::directory_log::lastPath(path), path / "bunsan_binlog_999999999.gz");
 }
 
 BOOST_AUTO_TEST_SUITE_END() // directory_log_

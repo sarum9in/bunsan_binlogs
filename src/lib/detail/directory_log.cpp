@@ -52,6 +52,21 @@ std::string toName(const std::size_t id)
     return str(boost::format(NAME_FORMAT) % id);
 }
 
+boost::optional<std::size_t> lastPathId(const boost::filesystem::path &path)
+{
+    boost::optional<std::size_t> maxId;
+    walk(path,
+        [&maxId](const std::size_t id, const boost::filesystem::path &/*path*/)
+        {
+            if (maxId) {
+                maxId = std::max(id, *maxId);
+            } else {
+                maxId = id;
+            }
+        });
+    return maxId;
+}
+
 }
 
 std::vector<boost::filesystem::path> listDir(const boost::filesystem::path &path)
@@ -66,17 +81,19 @@ std::vector<boost::filesystem::path> listDir(const boost::filesystem::path &path
     return list;
 }
 
+boost::optional<boost::filesystem::path> lastPath(const boost::filesystem::path &path)
+{
+    const boost::optional<std::size_t> lastId = lastPathId(path);
+    if (lastId) {
+        return path / toName(*lastId);
+    }
+    return boost::none;
+}
+
 boost::filesystem::path nextPath(const boost::filesystem::path &path)
 {
-    std::size_t maxId = 0;
-    bool found = false;
-    walk(path,
-        [&maxId, &found](const std::size_t id, const boost::filesystem::path &/*path*/)
-        {
-            maxId = std::max(id, maxId);
-            found = true;
-        });
-    const std::size_t nextId = maxId + found;
+    const boost::optional<std::size_t> lastId = lastPathId(path);
+    const std::size_t nextId = lastId ? *lastId + 1 : 0;
     if (nextId >= ID_END) {
         BOOST_THROW_EXCEPTION(TooManyLogFilesError());
     }
