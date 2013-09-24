@@ -3,6 +3,7 @@
 
 #include "gzip.hpp"
 
+#include <bunsan/binlogs/detail/directory_log.hpp>
 #include <bunsan/binlogs/detail/files.hpp>
 #include <bunsan/binlogs/io/file/open.hpp>
 #include <bunsan/binlogs/io/filter/gzip.hpp>
@@ -11,8 +12,10 @@
 #include <bunsan/binlogs/tests/Message1.pb.h>
 #include <bunsan/binlogs/tests/Message2.pb.h>
 
+#include <bunsan/testing/filesystem/tempdir.hpp>
 #include <bunsan/testing/filesystem/tempfile.hpp>
 #include <bunsan/testing/filesystem/tempfiles.hpp>
+#include <bunsan/testing/filesystem/write_data.hpp>
 
 #include <boost/filesystem/operations.hpp>
 
@@ -222,5 +225,23 @@ BOOST_AUTO_TEST_CASE(footer)
 BOOST_AUTO_TEST_SUITE_END() // corrupted
 
 BOOST_AUTO_TEST_SUITE_END() // append
+
+BOOST_FIXTURE_TEST_SUITE(directory_log_, bunsan::testing::filesystem::tempdir)
+
+BOOST_AUTO_TEST_CASE(nextPath)
+{
+    const std::vector<std::string> paths = {
+        "bunsan_binlog_000000000.gz",
+        "bunsan_binlog_000000001.gz",
+        "bunsan_binlog_000000002.gz",
+        "bunsan_binlog_000000003.gz",
+    };
+    for (const boost::filesystem::path &next: paths) {
+        BOOST_CHECK_EQUAL(path / next, detail::directory_log::nextPath(path));
+        bunsan::testing::filesystem::write_data(path / next, "");
+    }
+}
+
+BOOST_AUTO_TEST_SUITE_END() // directory_log_
 
 BOOST_AUTO_TEST_SUITE_END() // log_

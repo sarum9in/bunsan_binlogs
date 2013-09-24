@@ -26,6 +26,7 @@ bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/AbstractNamedLogWriter.cpp
     src/lib/LogFactory.cpp
 
+    src/lib/detail/directory_log.cpp
     src/lib/detail/equals.cpp
     src/lib/detail/files.cpp
     src/lib/detail/format.cpp
