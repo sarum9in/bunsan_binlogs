@@ -240,6 +240,8 @@ BOOST_AUTO_TEST_CASE(nextPath)
         BOOST_CHECK_EQUAL(path / next, detail::directory_log::nextPath(path));
         bunsan::testing::filesystem::write_data(path / next, "");
     }
+    bunsan::testing::filesystem::write_data(path / "bunsan_binlog_999999999.gz", "");
+    BOOST_CHECK_THROW(detail::directory_log::nextPath(path), detail::directory_log::TooManyLogFilesError);
 }
 
 BOOST_AUTO_TEST_SUITE_END() // directory_log_

@@ -11,10 +11,16 @@ namespace binlogs {
 namespace detail {
 namespace directory_log {
 
+constexpr std::size_t decpow(const std::size_t pow)
+{
+    return pow == 0 ? 1 : 10 * decpow(pow - 1);
+}
+
 boost::filesystem::path nextPath(const boost::filesystem::path &path)
 {
     static const std::string NAME_PREFIX = "bunsan_binlog_";
     constexpr std::size_t ID_SIZE = 9;
+    constexpr std::size_t ID_END = decpow(ID_SIZE);
     static const std::string NAME_SUFFIX = ".gz";
     static const std::string NAME_FORMAT =
         NAME_PREFIX + "%|0" + boost::lexical_cast<std::string>(ID_SIZE) + "|" + NAME_SUFFIX;
@@ -36,7 +42,11 @@ boost::filesystem::path nextPath(const boost::filesystem::path &path)
             }
         }
     }
-    return path / str(boost::format(NAME_FORMAT) % (maxId + found));
+    const std::size_t nextId = maxId + found;
+    if (nextId >= ID_END) {
+        BOOST_THROW_EXCEPTION(TooManyLogFilesError());
+    }
+    return path / str(boost::format(NAME_FORMAT) % nextId);
 }
 
 }
