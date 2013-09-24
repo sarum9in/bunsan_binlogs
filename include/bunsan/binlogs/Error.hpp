@@ -24,7 +24,6 @@ struct NamedLogWriterOpenError: virtual NamedLogWriterError {};
 struct NamedLogWriterRotateError: virtual NamedLogWriterError {};
 struct NamedLogWriterReopenError: virtual NamedLogWriterError {};
 struct NamedLogWriterAppendError: virtual NamedLogWriterError {};
-struct DirectoryLogWriterError: virtual LogWriterError {};
 
 struct FormatError: virtual Error {
     typedef boost::error_info<struct TagFormat, boost::uuids::uuid> Format;

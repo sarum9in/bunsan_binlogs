@@ -1,4 +1,4 @@
-#include <bunsan/binlogs/detail/directory_log.hpp>
+#include <bunsan/binlogs/directory_log/detail.hpp>
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>
@@ -10,8 +10,8 @@
 
 namespace bunsan {
 namespace binlogs {
-namespace detail {
 namespace directory_log {
+namespace detail {
 
 constexpr std::size_t decpow(const std::size_t pow)
 {

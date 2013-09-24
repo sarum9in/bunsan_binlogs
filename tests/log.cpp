@@ -3,8 +3,8 @@
 
 #include "gzip.hpp"
 
-#include <bunsan/binlogs/detail/directory_log.hpp>
 #include <bunsan/binlogs/detail/files.hpp>
+#include <bunsan/binlogs/directory_log/detail.hpp>
 #include <bunsan/binlogs/io/file/open.hpp>
 #include <bunsan/binlogs/io/filter/gzip.hpp>
 #include <bunsan/binlogs/LogFactory.hpp>
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(listDir)
     for (const std::string &name: nonLogPaths) {
         bunsan::testing::filesystem::write_data(path / name, "");
     }
-    const std::vector<boost::filesystem::path> result = detail::directory_log::listDir(path);
+    const std::vector<boost::filesystem::path> result = directory_log::detail::listDir(path);
     BOOST_REQUIRE_EQUAL(result.size(), paths.size());
     for (std::size_t i = 0; i < paths.size(); ++i) {
         BOOST_CHECK_EQUAL(result[i], path / paths[i]);
@@ -262,7 +262,7 @@ BOOST_AUTO_TEST_CASE(listDir)
 
 BOOST_AUTO_TEST_CASE(last_next_path)
 {
-    BOOST_CHECK(!detail::directory_log::lastPath(path));
+    BOOST_CHECK(!directory_log::detail::lastPath(path));
     const std::vector<std::string> paths = {
         "bunsan_binlog_000000000.gz",
         "bunsan_binlog_000000001.gz",
@@ -270,13 +270,13 @@ BOOST_AUTO_TEST_CASE(last_next_path)
         "bunsan_binlog_000000003.gz",
     };
     for (const boost::filesystem::path &next: paths) {
-        BOOST_CHECK_EQUAL(path / next, detail::directory_log::nextPath(path));
+        BOOST_CHECK_EQUAL(path / next, directory_log::detail::nextPath(path));
         bunsan::testing::filesystem::write_data(path / next, "");
-        BOOST_CHECK_EQUAL(detail::directory_log::lastPath(path), path / next);
+        BOOST_CHECK_EQUAL(directory_log::detail::lastPath(path), path / next);
     }
     bunsan::testing::filesystem::write_data(path / "bunsan_binlog_999999999.gz", "");
-    BOOST_CHECK_THROW(detail::directory_log::nextPath(path), detail::directory_log::TooManyLogFilesError);
-    BOOST_CHECK_EQUAL(detail::directory_log::lastPath(path), path / "bunsan_binlog_999999999.gz");
+    BOOST_CHECK_THROW(directory_log::detail::nextPath(path), directory_log::TooManyLogFilesError);
+    BOOST_CHECK_EQUAL(directory_log::detail::lastPath(path), path / "bunsan_binlog_999999999.gz");
 }
 
 BOOST_AUTO_TEST_SUITE_END() // directory_log_

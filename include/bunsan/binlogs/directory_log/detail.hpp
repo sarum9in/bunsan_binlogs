@@ -1,16 +1,14 @@
 #pragma once
 
-#include <bunsan/binlogs/Error.hpp>
+#include <bunsan/binlogs/directory_log/Error.hpp>
 
 #include <boost/filesystem/path.hpp>
 #include <boost/optional.hpp>
 
 namespace bunsan {
 namespace binlogs {
-namespace detail {
 namespace directory_log {
-
-struct TooManyLogFilesError: virtual DirectoryLogWriterError {};
+namespace detail {
 
 /// All log files in directory in lexicographical order.
 std::vector<boost::filesystem::path> listDir(const boost::filesystem::path &path);
