@@ -107,6 +107,22 @@ BOOST_AUTO_TEST_CASE(anonymous)
     readTestData(path);
 }
 
+BOOST_AUTO_TEST_CASE(doubleClose)
+{
+    {
+        const auto logWriter = openWriteOnly(path, getHeader());
+        writeTestData(logWriter.get());
+        logWriter->close();
+        logWriter->close();
+    }
+    {
+        const auto logReader = openReadOnly(path);
+        readTestData(logReader.get());
+        logReader->close();
+        logReader->close();
+    }
+}
+
 BOOST_AUTO_TEST_CASE(readFail)
 {
     // TODO test for State::kFail log reading
