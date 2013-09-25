@@ -9,8 +9,9 @@ namespace binlogs {
 namespace directory_log {
 
 LogReader::LogReader(const boost::filesystem::path &path):
-    paths_(detail::listDir(path)), next_(0)
+    paths_(detail::listDir(path)), next_(0), fail_(true /* forces update() */)
 {
+    // Opens first file or fails object creation, is it valid behavior?
     update();
 }
 
@@ -59,6 +60,9 @@ void LogReader::close()
 LogReader::State LogReader::state() const
 {
     try {
+        if (fail_) {
+            return State::kFail;
+        }
         if (logReader_) {
             switch (const State st = logReader_->state()) {
             case State::kBad:
@@ -103,15 +107,21 @@ void LogReader::fastCheck()
 bool LogReader::update()
 {
     if (logReader_ && !logReader_->usable()) {
-        logReader_.reset();
+        fail_ = true;
     }
-    if (!logReader_) {
+    if (fail_) {
         if (next_ < paths_.size()) {
-            logReader_ = openReadOnly(paths_[next_++]);
+            auto logReader = openReadOnly(paths_[next_++]);
+
+            // commit
+            fail_ = false;
+            logReader_ = std::move(logReader);
         } else {
+            fail_ = false; // EOF is not a failure
             return false;
         }
     }
+    BOOST_ASSERT(!fail_ || logReader_);
     return true;
 }
 

@@ -11,6 +11,7 @@ namespace bunsan {
 namespace binlogs {
 namespace directory_log {
 
+// TODO how to open log with invalid first file?
 class LogReader: public binlogs::LogReader {
 public:
     explicit LogReader(const boost::filesystem::path &path);
@@ -34,7 +35,11 @@ private:
 private:
     std::vector<boost::filesystem::path> paths_;
     std::size_t next_;
+
+    // invariant: logReader_ is not null
     std::unique_ptr<binlogs::LogReader> logReader_;
+    // last update has failed, logReader_ is outdated
+    bool fail_;
 };
 
 }
