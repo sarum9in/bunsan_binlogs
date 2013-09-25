@@ -31,6 +31,8 @@ bunsan_add_shared_library(${PROJECT_NAME}
     src/lib/detail/format.cpp
 
     src/lib/directory_log/detail.cpp
+    src/lib/directory_log/LogReader.cpp
+    src/lib/directory_log/LogWriter.cpp
 
     src/lib/v1/format.cpp
     src/lib/v1/MessageType.cpp

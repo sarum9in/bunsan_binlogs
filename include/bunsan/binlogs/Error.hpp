@@ -15,6 +15,7 @@ struct Error: virtual bunsan::error
 };
 
 struct LogReaderError: virtual Error {};
+struct ClosedReaderError: virtual Error {};
 
 struct LogWriterError: virtual Error {};
 struct OpenedWriterError: virtual LogWriterError {};

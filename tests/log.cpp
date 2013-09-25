@@ -66,21 +66,23 @@ void writeTestData(LogWriter *logWriter)
     writeTestData2(logWriter);
 }
 
-void readTestData(LogReader *logReader)
+void readTestData1(LogReader *logReader)
 {
     tests::Message1 msg1;
-    tests::Message2 msg2;
-
     // TODO implement operator<<() and use BOOST_CHECK_EQUAL()
     BOOST_CHECK(logReader->messageTypePool().header() == getHeader());
-    const MessageType *next = logReader->nextMessageType();
+    const MessageType *const next = logReader->nextMessageType();
     BOOST_REQUIRE(next);
     BOOST_REQUIRE_EQUAL(next->typeName(), "bunsan.binlogs.tests.Message1");
     logReader->read(msg1);
     BOOST_REQUIRE_EQUAL(msg1.key(), "key1");
     BOOST_REQUIRE_EQUAL(msg1.value(), "value1");
+}
 
-    next = logReader->nextMessageType();
+void readTestData2(LogReader *logReader)
+{
+    tests::Message2 msg2;
+    const MessageType *const next = logReader->nextMessageType();
     BOOST_REQUIRE(next);
     BOOST_REQUIRE_EQUAL(next->typeName(), "bunsan.binlogs.tests.Message2");
     logReader->read(msg2);
@@ -89,10 +91,20 @@ void readTestData(LogReader *logReader)
     BOOST_REQUIRE_EQUAL(msg2.values(0), "value21");
     BOOST_REQUIRE_EQUAL(msg2.values(1), "value22");
     BOOST_REQUIRE_EQUAL(msg2.values(2), "value23");
+}
 
-    next = logReader->nextMessageType();
+void readTestDataEof(LogReader *logReader)
+{
+    const MessageType *const next = logReader->nextMessageType();
     BOOST_CHECK(!next);
     BOOST_CHECK(logReader->eof());
+}
+
+void readTestData(LogReader *logReader)
+{
+    readTestData1(logReader);
+    readTestData2(logReader);
+    readTestDataEof(logReader);
 }
 
 void readTestData(const boost::filesystem::path &path)
@@ -226,7 +238,14 @@ BOOST_AUTO_TEST_SUITE_END() // corrupted
 
 BOOST_AUTO_TEST_SUITE_END() // append
 
-BOOST_FIXTURE_TEST_SUITE(directory_log_, bunsan::testing::filesystem::tempdir)
+struct DirectoryLogFixture {
+    bunsan::testing::filesystem::tempdir root;
+    boost::filesystem::path path = root.path / "log", backup = root.path / "backup";
+};
+
+BOOST_FIXTURE_TEST_SUITE(directory_log_, DirectoryLogFixture)
+
+BOOST_FIXTURE_TEST_SUITE(detail_, bunsan::testing::filesystem::tempdir)
 
 BOOST_AUTO_TEST_CASE(listDir)
 {
@@ -278,6 +297,146 @@ BOOST_AUTO_TEST_CASE(last_next_path)
     BOOST_CHECK_THROW(directory_log::detail::nextPath(path), directory_log::TooManyLogFilesError);
     BOOST_CHECK_EQUAL(directory_log::detail::lastPath(path), path / "bunsan_binlog_999999999.gz");
 }
+
+BOOST_AUTO_TEST_SUITE_END() // detail_
+
+BOOST_AUTO_TEST_SUITE(reader)
+
+BOOST_AUTO_TEST_CASE(read)
+{
+    {
+        auto logWriter = openWriteOnly(root.path / "bunsan_binlog_000000000.gz", getHeader());
+        writeTestData1(logWriter.get());
+        logWriter->close();
+        logWriter = openWriteOnly(root.path / "bunsan_binlog_000000001.gz", getHeader());
+        writeTestData2(logWriter.get());
+        logWriter->close();
+    }
+    readTestData(root.path);
+}
+
+BOOST_AUTO_TEST_CASE(fail)
+{
+    {
+        auto logWriter = openWriteOnly(root.path / "bunsan_binlog_000000000.gz", getHeader());
+        writeTestData1(logWriter.get());
+        logWriter->close();
+        bunsan::testing::filesystem::write_data(root.path / "bunsan_binlog_000000001.gz", "");
+        logWriter = openWriteOnly(root.path / "bunsan_binlog_000000002.gz", getHeader());
+        writeTestData2(logWriter.get());
+        logWriter->close();
+    }
+    const auto logReader = openReadOnly(root.path);
+    readTestData1(logReader.get());
+    BOOST_CHECK_THROW(logReader->read(), std::exception);
+    BOOST_CHECK(logReader->fail());
+    readTestData2(logReader.get());
+    readTestDataEof(logReader.get());
+    logReader->close();
+}
+
+BOOST_AUTO_TEST_SUITE_END() // reader
+
+BOOST_AUTO_TEST_SUITE(writer)
+
+BOOST_AUTO_TEST_CASE(write)
+{
+    const auto logWriter = openDirWriteOnly(path, getHeader());
+    writeTestData(logWriter.get());
+    logWriter->close();
+    {
+        const auto logReader = openReadOnly(path / "bunsan_binlog_000000000.gz");
+        readTestData(logReader.get());
+    }
+    readTestData(path);
+}
+
+BOOST_AUTO_TEST_CASE(append)
+{
+    auto logWriter = openDirWriteOnly(path, getHeader());
+    writeTestData1(logWriter.get());
+    logWriter->close();
+    logWriter = openAppendOnly(path, getHeader());
+    writeTestData2(logWriter.get());
+    logWriter->close();
+    {
+        const auto logReader = openReadOnly(path / "bunsan_binlog_000000000.gz");
+        readTestData1(logReader.get());
+        readTestDataEof(logReader.get());
+    }
+    {
+        const auto logReader = openReadOnly(path / "bunsan_binlog_000000001.gz");
+        readTestData2(logReader.get());
+        readTestDataEof(logReader.get());
+    }
+    readTestData(path);
+}
+
+BOOST_AUTO_TEST_CASE(reopen)
+{
+    const auto logWriter = openDirWriteOnly(path, getHeader());
+    writeTestData(logWriter.get());
+    logWriter->reopen(backup);
+    writeTestData(logWriter.get());
+    logWriter->close();
+
+    readTestData(path);
+    readTestData(backup);
+}
+
+BOOST_AUTO_TEST_CASE(reopen_moved)
+{
+    const auto logWriter = openDirWriteOnly(path, getHeader());
+    writeTestData(logWriter.get());
+    boost::filesystem::rename(path, backup);
+    logWriter->reopen();
+    writeTestData(logWriter.get());
+    logWriter->close();
+
+    readTestData(path);
+    readTestData(backup);
+}
+
+BOOST_AUTO_TEST_CASE(rotate)
+{
+    const auto logWriter = openDirWriteOnly(path, getHeader());
+    writeTestData(logWriter.get());
+    logWriter->rotate(backup);
+    writeTestData(logWriter.get());
+    logWriter->close();
+
+    readTestData(path);
+    readTestData(backup);
+}
+
+BOOST_AUTO_TEST_SUITE(fastCheck)
+
+BOOST_AUTO_TEST_CASE(empty)
+{
+    const auto logReader = openReadOnly(root.path);
+    logReader->fastCheck();
+    BOOST_CHECK(logReader->eof());
+}
+
+BOOST_AUTO_TEST_CASE(nonEmpty)
+{
+    const auto logWriter = openDirWriteOnly(path, getHeader());
+    writeTestData1(logWriter.get());
+    logWriter->close();
+    logWriter->append(path);
+    writeTestData2(logWriter.get());
+    logWriter->close();
+
+    BOOST_REQUIRE_EQUAL(directory_log::detail::listDir(path).size(), 2);
+
+    const auto logReader = openReadOnly(path);
+    logReader->fastCheck();
+    BOOST_CHECK(logReader->eof());
+}
+
+BOOST_AUTO_TEST_SUITE_END() // fastCheck
+
+BOOST_AUTO_TEST_SUITE_END() // writer
 
 BOOST_AUTO_TEST_SUITE_END() // directory_log_
 
