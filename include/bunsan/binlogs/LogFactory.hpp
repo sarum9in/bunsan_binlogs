@@ -23,7 +23,13 @@ std::unique_ptr<LogWriter> openWriteOnly(
 
 std::unique_ptr<NamedLogWriter> newWriter(const Header &header);
 
+std::unique_ptr<NamedLogWriter> newDirWriter(const Header &header);
+
 std::unique_ptr<NamedLogWriter> openWriteOnly(
+    const boost::filesystem::path &path,
+    const Header &header);
+
+std::unique_ptr<NamedLogWriter> openDirWriteOnly(
     const boost::filesystem::path &path,
     const Header &header);
 

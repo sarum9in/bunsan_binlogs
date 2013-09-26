@@ -173,12 +173,14 @@ void LogReader::read_(google::protobuf::uint32 &uint32)
 
 void LogReader::close()
 {
-    BOOST_SCOPE_EXIT_ALL(this)
-    {
-        state_ = State::kEof;
-        input_.reset();
-    };
-    input_->close();
+    if (input_) {
+        BOOST_SCOPE_EXIT_ALL(this)
+        {
+            state_ = State::kEof;
+            input_.reset();
+        };
+        input_->close();
+    }
 }
 
 LogReader::State LogReader::state() const

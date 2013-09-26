@@ -26,10 +26,14 @@ public:
     /*!
      * \brief What message will be read next (if available)?
      *
+     * \warning Pointer is only valid until next call to read().
+     * \note Subsequent calls to nextMessageType() will return the same pointer.
+     *
      * \return nullptr on EOF
      */
     virtual const MessageType *nextMessageType()=0;
 
+    /// \warning May change during log reading.
     virtual const MessageTypePool &messageTypePool() const=0;
 
     /*!

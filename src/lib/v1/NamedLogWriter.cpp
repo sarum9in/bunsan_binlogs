@@ -68,7 +68,8 @@ void NamedLogWriter::open_(
     const bool append)
 {
     if (hasOutput()) {
-        BOOST_THROW_EXCEPTION(OpenedWriterError());
+        BOOST_THROW_EXCEPTION(OpenedWriterError() <<
+                              OpenedWriterError::Path(path_));
     }
     try {
         path_ = path;
