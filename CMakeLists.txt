@@ -63,7 +63,11 @@ bunsan_add_executable(${PROJECT_NAME}_fast_check
 )
 
 bunsan_install_headers()
-bunsan_install_targets(${PROJECT_NAME} ${PROJECT_NAME}_read)
+bunsan_install_targets(
+    ${PROJECT_NAME}
+    ${PROJECT_NAME}_read
+    ${PROJECT_NAME}_fast_check
+)
 
 if(ENABLE_TESTS)
     bunsan_protobuf_generate_cpp(SOURCES tests_proto_srcs HEADERS proto_hdrs INSTALL include PROTOS
